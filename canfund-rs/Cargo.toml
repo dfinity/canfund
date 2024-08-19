@@ -1,0 +1,30 @@
+
+[package]
+name = 'canfund'
+description = 'This Rust library provides a simple interface to monitor and add cycles to canisters on the Internet Computer.'
+readme = "../README.md"
+repository = "https://github.com/dfinity/canfund"
+license = "Apache-2.0"
+version = '0.0.2-alpha.2'
+include = ['src', 'Cargo.toml']
+authors = ["DFINITY Stiftung"]
+edition = "2021"
+
+[lib]
+path = 'src/lib.rs'
+bench = false
+
+[dependencies]
+async-trait = { workspace = true }
+candid = { workspace = true }
+futures = { workspace = true }
+ic-cdk = { workspace = true }
+ic-cdk-timers = { workspace = true }
+ic-ledger-types = { workspace = true }
+num-bigint = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_bytes = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ['full'] }
