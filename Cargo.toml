@@ -1,20 +1,32 @@
 [workspace]
 members = [
   "canfund-rs",
-  "examples",
-#  "tests",
+  "examples/funding_canister",
+  "tests/integration",
 ]
 resolver = "2"
 
 [workspace.dependencies]
 async-trait = "0.1"
 candid = "0.10.3"
+candid_parser = "0.1.3"
 futures = "0.3"
-ic-cdk = "0.13.2"
-ic-cdk-timers = "0.7.0"
-ic-ledger-types = "0.10.0"
+hex = "0.4"
+ic-cdk = "0.15.1"
+ic-cdk-macros = "0.15.0"
+ic-cdk-timers = "0.9.0"
+ic-ledger-types = "0.12.0"
+itertools = "0.13.0"
+lazy_static = "1.4.0"
 num-bigint = "0.4"
+pocket-ic = "4.0.0"
 serde = "1.0.188"
 serde_bytes = "0.11"
+rand = "0.8.5"
+rand_chacha = "0.3.1"
+reqwest = { version = "0.12", default-features = false }
+tempfile = "3.10"
 thiserror = "1.0.48"
 tokio = { version = "1.33.0" }
+uuid = { version = "1.4.1", features = ["serde", "v4"] }
+wat = "1.0.52"
