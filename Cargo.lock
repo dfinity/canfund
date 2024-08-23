@@ -468,6 +468,7 @@ dependencies = [
  "canfund",
  "ic-cdk 0.15.1",
  "ic-cdk-macros 0.15.0",
+ "ic-ledger-types",
  "serde",
 ]
 

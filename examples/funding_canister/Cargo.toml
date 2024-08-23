@@ -12,4 +12,5 @@ candid = { workspace = true }
 canfund = { path = "../../canfund-rs", version = "0.0.2-alpha.2" }
 ic-cdk = { workspace = true }
 ic-cdk-macros = { workspace = true }
+ic-ledger-types = { workspace = true }
 serde = { workspace = true, features = ['derive'] }
