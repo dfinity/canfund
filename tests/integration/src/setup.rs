@@ -17,8 +17,6 @@ use std::time::{Duration, SystemTime};
 
 static POCKET_IC_BIN: &str = "./pocket-ic";
 
-pub static CANISTER_INITIAL_CYCLES: u128 = 300_000_000_000;
-
 #[derive(Serialize, CandidType, Clone, Debug, PartialEq, Eq)]
 pub enum ExchangeRateCanister {
     /// Enables the exchange rate canister with the given canister ID.
@@ -35,24 +33,7 @@ pub struct CyclesCanisterInitPayload {
     pub last_purged_notification: Option<u64>,
 }
 
-#[derive(Clone)]
-pub struct SetupConfig {
-    pub start_cycles: Option<u128>,
-}
-
-impl Default for SetupConfig {
-    fn default() -> Self {
-        Self {
-            start_cycles: None,
-        }
-    }
-}
-
 pub fn setup_new_env() -> TestEnv {
-    setup_new_env_with_config(SetupConfig::default())
-}
-
-pub fn setup_new_env_with_config(config: SetupConfig) -> TestEnv {
     let path = match env::var_os("POCKET_IC_BIN") {
         None => {
             env::set_var("POCKET_IC_BIN", POCKET_IC_BIN);
@@ -75,7 +56,7 @@ pub fn setup_new_env_with_config(config: SetupConfig) -> TestEnv {
         ", &path, &env::current_dir().map(|x| x.display().to_string()).unwrap_or_else(|_| "an unknown directory".to_string()));
     }
 
-    let mut env = PocketIcBuilder::new()
+    let env = PocketIcBuilder::new()
         .with_nns_subnet()
         .with_application_subnet()
         .with_ii_subnet()
@@ -89,7 +70,7 @@ pub fn setup_new_env_with_config(config: SetupConfig) -> TestEnv {
     env.set_time(SystemTime::now() - Duration::from_secs(24 * 60 * 60));
     let controller = controller_test_id();
     let minter = minter_test_id();
-    let canister_ids = install_canisters(&mut env, config, controller, minter);
+    let canister_ids = install_canisters(&env, controller, minter);
 
     TestEnv {
         env,
@@ -100,7 +81,7 @@ pub fn setup_new_env_with_config(config: SetupConfig) -> TestEnv {
 }
 
 pub fn create_canister_with_cycles(
-    env: &mut PocketIc,
+    env: &PocketIc,
     controller: Principal,
     cycles: u128,
 ) -> Principal {
@@ -110,8 +91,7 @@ pub fn create_canister_with_cycles(
 }
 
 fn install_canisters(
-    env: &mut PocketIc,
-    config: SetupConfig,
+    env: &PocketIc,
     controller: Principal,
     minter: Principal,
 ) -> CanisterIds {
@@ -184,34 +164,24 @@ fn install_canisters(
         Some(controller),
     );
 
-    // simple canister to burn cycles and trigger funding rules
-    let funded_canister_id = create_canister_with_cycles(
-        env, 
-        controller, 
-        config.start_cycles.unwrap_or(CANISTER_INITIAL_CYCLES),
-    );
-    let module_bytes = wat::parse_str(COUNTER_WAT).unwrap();
-    env.install_canister(funded_canister_id, module_bytes.clone(), vec![], Some(controller));
+    CanisterIds {
+        icp_ledger: nns_ledger_canister_id,
+        cycles_minting_canister: cmc_canister_id,
+    }
+}
 
+pub fn install_simple_funding_canister(env: &PocketIc, controller: Principal, cycles: u128, funded_canister_ids: Vec<Principal>) -> Principal {
     // simple funding canister starts with more cycles so it does not run out of cycles before the funded canister does
     let funding_canister_id = create_canister_with_cycles(
         env,
         controller,
-        config.start_cycles.unwrap_or(100_000_000_000_000),
+        cycles,
     );
 
-    // advanced funding canister starts with less cycles as it can fund itself
-    let advanced_funding_canister_id = create_canister_with_cycles(
-        env,
-        controller,
-        config.start_cycles.unwrap_or(CANISTER_INITIAL_CYCLES),
-    );
-
-    env.set_controllers(funded_canister_id, Some(controller), vec![controller, funding_canister_id, advanced_funding_canister_id]).unwrap();
-
+    
     let funding_canister_wasm = get_canister_wasm("simple_funding").to_vec();
     let funding_canister_args = FundingConfig {
-        funded_canister_ids: vec![funded_canister_id],
+        funded_canister_ids: funded_canister_ids,
     };
     env.install_canister(
         funding_canister_id,
@@ -219,22 +189,44 @@ fn install_canisters(
         Encode!(&funding_canister_args).unwrap(),
         Some(controller),
     );
+    
+    funding_canister_id
+}
 
-    let advanced_funding_canister_wasm = get_canister_wasm("advanced_funding").to_vec();
+pub fn install_advanced_funding_canister(env: &PocketIc, controller: Principal, cycles: u128, funded_canister_ids: Vec<Principal>) -> Principal {
+    // simple funding canister starts with more cycles so it does not run out of cycles before the funded canister does
+    let funding_canister_id = create_canister_with_cycles(
+        env,
+        controller,
+        cycles,
+    );
+
+    
+    let funding_canister_wasm = get_canister_wasm("advanced_funding").to_vec();
+    let funding_canister_args = FundingConfig {
+        funded_canister_ids: funded_canister_ids,
+    };
     env.install_canister(
-        advanced_funding_canister_id,
-        advanced_funding_canister_wasm,
+        funding_canister_id,
+        funding_canister_wasm,
         Encode!(&funding_canister_args).unwrap(),
         Some(controller),
     );
+    
+    funding_canister_id
+}
 
-    CanisterIds {
-        icp_ledger: nns_ledger_canister_id,
-        funding_canister: funding_canister_id,
-        advanced_funding_canister: advanced_funding_canister_id,
-        funded_canister: funded_canister_id,
-        cycles_minting_canister: cmc_canister_id,
-    }
+pub fn install_funded_canister(env: &PocketIc, controller: Principal, cycles: u128) -> Principal {
+    // simple canister to burn cycles and trigger funding rules
+    let funded_canister_id = create_canister_with_cycles(
+        env, 
+        controller, 
+        cycles,
+    );
+    let module_bytes = wat::parse_str(COUNTER_WAT).unwrap();
+    env.install_canister(funded_canister_id, module_bytes.clone(), vec![], Some(controller));
+    
+    funded_canister_id
 }
 
 pub(crate) fn get_canister_wasm(canister_name: &str) -> Vec<u8> {

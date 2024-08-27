@@ -19,7 +19,4 @@ pub struct TestEnv {
 pub struct CanisterIds {
     pub icp_ledger: Principal,
     pub cycles_minting_canister: Principal,
-    pub advanced_funding_canister: Principal, // Performs self-funding && advanced funding operations
-    pub funding_canister: Principal, // Performs simple threshold-based funding opration
-    pub funded_canister: Principal,
 }
