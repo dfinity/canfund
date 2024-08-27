@@ -2,6 +2,8 @@ use std::{cell::RefCell, sync::Arc};
 
 use candid::{self, CandidType, Deserialize, Principal};
 use canfund::{manager::{options::{CyclesThreshold, FundManagerOptions, FundStrategy}, RegisterOpts}, operations::fetch::FetchCyclesBalanceFromCanisterStatus, FundManager};
+use ic_cdk::post_upgrade;
+use ic_cdk_macros::init;
 
 
 thread_local! {
@@ -12,10 +14,15 @@ thread_local! {
 #[derive(CandidType, Deserialize)]
 pub struct FundingConfig { pub funded_canister_ids: Vec<Principal> }
 
-#[ic_cdk_macros::init]
-async fn initialize(config: FundingConfig) {
+#[init]
+fn initialize(config: FundingConfig) {
     start_canister_cycles_monitoring(config);
 }   
+
+#[post_upgrade]
+fn post_upgrade(config: FundingConfig) {
+    start_canister_cycles_monitoring(config);
+} 
 
 pub fn start_canister_cycles_monitoring(config: FundingConfig) {
     if config.funded_canister_ids.is_empty() {

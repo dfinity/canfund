@@ -2,6 +2,7 @@ use std::{cell::RefCell, sync::Arc};
 
 use candid::{self, CandidType, Deserialize, Principal};
 use canfund::{api::{cmc::IcCyclesMintingCanister, ledger::IcLedgerCanister}, manager::{options::{EstimatedRuntime, FundManagerOptions, FundStrategy, ObtainCyclesOptions}, RegisterOpts}, operations::{fetch::FetchCyclesBalanceFromCanisterStatus, obtain::MintCycles}, FundManager};
+use ic_cdk_macros::{init, post_upgrade};
 use ic_ledger_types::{Subaccount, DEFAULT_SUBACCOUNT, MAINNET_CYCLES_MINTING_CANISTER_ID, MAINNET_LEDGER_CANISTER_ID};
 
 thread_local! {
@@ -15,13 +16,15 @@ pub struct FundingConfig {
 }
 
 
-#[ic_cdk_macros::init]
-async fn initialize(config: FundingConfig) {
+#[init]
+fn initialize(config: FundingConfig) {
     start_canister_cycles_monitoring(config);
 }   
 
-
-// TODO post upgrade install 
+#[post_upgrade]
+fn post_upgrade(config: FundingConfig) {
+    start_canister_cycles_monitoring(config);
+}
 
 pub fn start_canister_cycles_monitoring(config: FundingConfig) {
     FUND_MANAGER.with(|fund_manager| {
