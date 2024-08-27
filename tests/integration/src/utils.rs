@@ -1,4 +1,4 @@
-use candid::{CandidType, Deserialize, Principal};
+use candid::Principal;
 use pocket_ic::PocketIc;
 use std::time::Duration;
 
@@ -82,19 +82,6 @@ pub fn minter_test_id() -> Principal {
     bytes.push(0xfc); // internal marker for minter test id
     bytes.push(0x01); // marker for opaque ids
     Principal::from_slice(&bytes)
-}
-
-#[derive(CandidType, serde::Serialize, Deserialize, Clone, Debug)]
-pub struct SystemInfoDTO {
-    pub name: String,
-    pub version: String,
-    pub upgrader_id: Principal,
-    pub cycles: u64,
-}
-
-#[derive(CandidType, serde::Serialize, Deserialize, Clone, Debug)]
-pub struct SystemInfoResponse {
-    pub system: SystemInfoDTO,
 }
 
 pub fn advance_time_to_burn_cycles(

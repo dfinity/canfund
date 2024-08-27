@@ -7,7 +7,8 @@ edition = '2021'
 [dependencies]
 candid = { workspace = true }
 candid_parser = { workspace = true }
-funding_canister = { path = '../../examples/funding_canister', version = '0.1.0' }
+simple_funding = { path = '../../examples/simple_funding', version = '0.1.0' }
+advanced_funding = { path = '../../examples/advanced_funding', version = '0.1.0' }
 hex = { workspace = true }
 ic-cdk = { workspace = true }
 ic-ledger-types = { workspace = true }
@@ -19,7 +20,16 @@ rand = { workspace = true }
 rand_chacha = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true, features = ['derive'] }
+serde_json = { workspace = true }
 tempfile = { workspace = true }
-tokio.workspace = true
+tokio = { workspace = true }
+toml = { workspace = true }
 uuid = { workspace = true }
 wat = { workspace = true }
+
+[build-dependencies]
+reqwest = { workspace = true, features = ["blocking", "default-tls"] }
+serde = { workspace = true, features = ['derive'] }
+serde_json = { workspace = true }
+lazy_static = { workspace = true }
+toml = { workspace = true }

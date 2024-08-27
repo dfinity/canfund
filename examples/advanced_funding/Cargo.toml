@@ -1,5 +1,5 @@
 [package]
-name = "funding_canister"
+name = "advanced_funding"
 version = "0.1.0"
 edition = "2021"
 

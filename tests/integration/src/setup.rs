@@ -1,10 +1,10 @@
 use crate::interfaces::{
-    NnsIndexCanisterInitPayload, NnsLedgerCanisterInitPayload, NnsLedgerCanisterPayload,
+    NnsLedgerCanisterInitPayload, NnsLedgerCanisterPayload,
 };
 use crate::utils::{controller_test_id, minter_test_id, COUNTER_WAT};
 use crate::{CanisterIds, TestEnv};
 use candid::{CandidType, Encode, Principal};
-use funding_canister::FundingConfig;
+use simple_funding::FundingConfig;
 use ic_ledger_types::{AccountIdentifier, Tokens, DEFAULT_SUBACCOUNT};
 use pocket_ic::{PocketIc, PocketIcBuilder};
 use serde::Serialize;
@@ -17,7 +17,7 @@ use std::time::{Duration, SystemTime};
 
 static POCKET_IC_BIN: &str = "./pocket-ic";
 
-pub static CANISTER_INITIAL_CYCLES: u128 = 100_000_000_000_000;
+pub static CANISTER_INITIAL_CYCLES: u128 = 300_000_000_000;
 
 #[derive(Serialize, CandidType, Clone, Debug, PartialEq, Eq)]
 pub enum ExchangeRateCanister {
@@ -168,22 +168,11 @@ fn install_canisters(
         Some(controller),
     );
 
-    let icp_index_canister_wasm = get_canister_wasm("icp_index").to_vec();
-    let icp_index_init_args = NnsIndexCanisterInitPayload {
-        ledger_id: nns_ledger_canister_id,
-    };
-    env.install_canister(
-        nns_index_canister_id,
-        icp_index_canister_wasm,
-        Encode!(&icp_index_init_args).unwrap(),
-        Some(controller),
-    );
-
     let cmc_canister_wasm = get_canister_wasm("cmc").to_vec();
     let cmc_init_args: Option<CyclesCanisterInitPayload> = Some(CyclesCanisterInitPayload {
         ledger_canister_id: Some(nns_ledger_canister_id),
         governance_canister_id: Some(nns_governance_canister_id),
-        minting_account_id: None,
+        minting_account_id: Some(minting_account),
         exchange_rate_canister: Some(ExchangeRateCanister::Set(nns_exchange_rate_canister_id)),
         cycles_ledger_canister_id: Some(nns_cycles_ledger_canister_id),
         last_purged_notification: Some(0),
@@ -204,13 +193,23 @@ fn install_canisters(
     let module_bytes = wat::parse_str(COUNTER_WAT).unwrap();
     env.install_canister(funded_canister_id, module_bytes.clone(), vec![], Some(controller));
 
+    // simple funding canister starts with more cycles so it does not run out of cycles before the funded canister does
     let funding_canister_id = create_canister_with_cycles(
+        env,
+        controller,
+        config.start_cycles.unwrap_or(100_000_000_000_000),
+    );
+
+    // advanced funding canister starts with less cycles as it can fund itself
+    let advanced_funding_canister_id = create_canister_with_cycles(
         env,
         controller,
         config.start_cycles.unwrap_or(CANISTER_INITIAL_CYCLES),
     );
 
-    let funding_canister_wasm = get_canister_wasm("funding_canister").to_vec();
+    env.set_controllers(funded_canister_id, Some(controller), vec![controller, funding_canister_id, advanced_funding_canister_id]).unwrap();
+
+    let funding_canister_wasm = get_canister_wasm("simple_funding").to_vec();
     let funding_canister_args = FundingConfig {
         funded_canister_ids: vec![funded_canister_id],
     };
@@ -221,25 +220,18 @@ fn install_canisters(
         Some(controller),
     );
 
-    // required because the station canister performs post init tasks through a one off timer
-    env.tick();
-    // required because it requires inter canister calls to initialize the UUIDs generator with a call
-    // to `raw_rand` which is not allowed in init calls,
-    env.tick();
-    env.tick();
-    // required because the station canister creates the upgrader canister
-    env.tick();
-    // required because the station canister installs the upgrader canister
-    env.tick();
-    env.tick();
-    // required because the station canister updates its own controllers
-    env.tick();
-    env.tick();
+    let advanced_funding_canister_wasm = get_canister_wasm("advanced_funding").to_vec();
+    env.install_canister(
+        advanced_funding_canister_id,
+        advanced_funding_canister_wasm,
+        Encode!(&funding_canister_args).unwrap(),
+        Some(controller),
+    );
 
     CanisterIds {
         icp_ledger: nns_ledger_canister_id,
-        icp_index: cmc_canister_id,
         funding_canister: funding_canister_id,
+        advanced_funding_canister: advanced_funding_canister_id,
         funded_canister: funded_canister_id,
         cycles_minting_canister: cmc_canister_id,
     }
