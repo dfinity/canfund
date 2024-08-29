@@ -55,6 +55,8 @@ fn can_mint_cycles_to_top_up_self() {
     // 2 ticks important to ensure funding is scheduled in another round
     env.tick();
     env.tick();
+    env.tick();
+    env.tick();
     
     let account_id = AccountIdentifier::new(&advanced_funding_canister_id, &DEFAULT_SUBACCOUNT);
     send_icp_to_account(&env, controller, account_id, 100 * ICP, 0, None).unwrap();

@@ -18,17 +18,11 @@ use std::time::{Duration, SystemTime};
 static POCKET_IC_BIN: &str = "./pocket-ic";
 
 #[derive(Serialize, CandidType, Clone, Debug, PartialEq, Eq)]
-pub enum ExchangeRateCanister {
-    /// Enables the exchange rate canister with the given canister ID.
-    Set(Principal),
-}
-
-#[derive(Serialize, CandidType, Clone, Debug, PartialEq, Eq)]
 pub struct CyclesCanisterInitPayload {
     pub ledger_canister_id: Option<Principal>,
     pub governance_canister_id: Option<Principal>,
     pub minting_account_id: Option<AccountIdentifier>,
-    pub exchange_rate_canister: Option<ExchangeRateCanister>,
+    // pub exchange_rate_canister: Option<ExchangeRateCanister>, // Not needed for tests
     pub cycles_ledger_canister_id: Option<Principal>,
     pub last_purged_notification: Option<u64>,
 }
@@ -102,29 +96,13 @@ fn install_canisters(
         .unwrap();
     assert_eq!(nns_ledger_canister_id, specified_nns_ledger_canister_id);
 
-    let specified_nns_index_canister_id =
-        Principal::from_text("r7inp-6aaaa-aaaaa-aaabq-cai").unwrap();
-    let nns_index_canister_id = env
-        .create_canister_with_id(Some(controller), None, specified_nns_index_canister_id)
-        .unwrap();
-    assert_eq!(nns_index_canister_id, specified_nns_index_canister_id);
-
     let specified_cmc_canister_id = Principal::from_text("rkp4c-7iaaa-aaaaa-aaaca-cai").unwrap();
     let cmc_canister_id = env
         .create_canister_with_id(Some(controller), None, specified_cmc_canister_id)
         .unwrap();
     assert_eq!(cmc_canister_id, specified_cmc_canister_id);
 
-    let specified_nns_exchange_rate_canister_id =
-        Principal::from_text("uf6dk-hyaaa-aaaaq-qaaaq-cai").unwrap();
-    let nns_exchange_rate_canister_id = env
-        .create_canister_with_id(Some(controller), None, specified_nns_exchange_rate_canister_id)
-        .unwrap();
-    assert_eq!(nns_exchange_rate_canister_id,specified_nns_exchange_rate_canister_id);
-
     let nns_governance_canister_id = Principal::from_text("rrkah-fqaaa-aaaaa-aaaaq-cai").unwrap();
-    let nns_cycles_ledger_canister_id =
-        Principal::from_text("um5iw-rqaaa-aaaaq-qaaba-cai").unwrap();
 
     let controller_account = AccountIdentifier::new(&controller, &DEFAULT_SUBACCOUNT);
     let minting_account = AccountIdentifier::new(&minter, &DEFAULT_SUBACCOUNT);
@@ -153,8 +131,7 @@ fn install_canisters(
         ledger_canister_id: Some(nns_ledger_canister_id),
         governance_canister_id: Some(nns_governance_canister_id),
         minting_account_id: Some(minting_account),
-        exchange_rate_canister: Some(ExchangeRateCanister::Set(nns_exchange_rate_canister_id)),
-        cycles_ledger_canister_id: Some(nns_cycles_ledger_canister_id),
+        cycles_ledger_canister_id: None,
         last_purged_notification: Some(0),
     });
     env.install_canister(
@@ -181,7 +158,7 @@ pub fn install_simple_funding_canister(env: &PocketIc, controller: Principal, cy
     
     let funding_canister_wasm = get_canister_wasm("simple_funding").to_vec();
     let funding_canister_args = FundingConfig {
-        funded_canister_ids: funded_canister_ids,
+        funded_canister_ids,
     };
     env.install_canister(
         funding_canister_id,
@@ -204,7 +181,7 @@ pub fn install_advanced_funding_canister(env: &PocketIc, controller: Principal, 
     
     let funding_canister_wasm = get_canister_wasm("advanced_funding").to_vec();
     let funding_canister_args = FundingConfig {
-        funded_canister_ids: funded_canister_ids,
+        funded_canister_ids,
     };
     env.install_canister(
         funding_canister_id,
