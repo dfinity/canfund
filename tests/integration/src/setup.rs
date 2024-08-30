@@ -5,7 +5,7 @@ use crate::utils::{controller_test_id, minter_test_id, COUNTER_WAT};
 use crate::{CanisterIds, TestEnv};
 use candid::{CandidType, Encode, Principal};
 use simple_funding::FundingConfig;
-use ic_ledger_types::{AccountIdentifier, Tokens, DEFAULT_SUBACCOUNT};
+use ic_ledger_types::{AccountIdentifier, Tokens, DEFAULT_SUBACCOUNT, MAINNET_CYCLES_MINTING_CANISTER_ID, MAINNET_LEDGER_CANISTER_ID};
 use pocket_ic::{PocketIc, PocketIcBuilder};
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
@@ -89,18 +89,15 @@ fn install_canisters(
     controller: Principal,
     minter: Principal,
 ) -> CanisterIds {
-    let specified_nns_ledger_canister_id =
-        Principal::from_text("ryjl3-tyaaa-aaaaa-aaaba-cai").unwrap();
     let nns_ledger_canister_id = env
-        .create_canister_with_id(Some(controller), None, specified_nns_ledger_canister_id)
+        .create_canister_with_id(Some(controller), None, MAINNET_LEDGER_CANISTER_ID)
         .unwrap();
-    assert_eq!(nns_ledger_canister_id, specified_nns_ledger_canister_id);
+    assert_eq!(nns_ledger_canister_id, MAINNET_LEDGER_CANISTER_ID);
 
-    let specified_cmc_canister_id = Principal::from_text("rkp4c-7iaaa-aaaaa-aaaca-cai").unwrap();
     let cmc_canister_id = env
-        .create_canister_with_id(Some(controller), None, specified_cmc_canister_id)
+        .create_canister_with_id(Some(controller), None, MAINNET_CYCLES_MINTING_CANISTER_ID)
         .unwrap();
-    assert_eq!(cmc_canister_id, specified_cmc_canister_id);
+    assert_eq!(cmc_canister_id, MAINNET_CYCLES_MINTING_CANISTER_ID);
 
     let nns_governance_canister_id = Principal::from_text("rrkah-fqaaa-aaaaa-aaaaq-cai").unwrap();
 

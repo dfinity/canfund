@@ -68,8 +68,10 @@ lazy_static! {
             std::process::exit(1);
         }
     };
+    
     static ref DEPENDENCIES: Vec<PathBuf> =
-        vec![WORKSPACE_ROOT.join("examples")];
+        vec![WORKSPACE_ROOT.join("examples"), WORKSPACE_ROOT.join("canfund-rs")];
+
     static ref EXAMPLES_WASMS : Vec<String> = {
         let mut packages = Vec::new();
         let examples_path = WORKSPACE_ROOT.join("examples");

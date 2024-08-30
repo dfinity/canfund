@@ -1,5 +1,5 @@
 use candid::{CandidType, Principal};
-use ic_ledger_types::{AccountBalanceArgs, AccountIdentifier, Memo, Subaccount, Tokens, TransferArgs, TransferError};
+use ic_ledger_types::{AccountBalanceArgs, AccountIdentifier, Memo, Subaccount, Tokens, TransferArgs, TransferError, MAINNET_LEDGER_CANISTER_ID};
 use pocket_ic::{update_candid_as, PocketIc};
 use std::collections::{HashMap, HashSet};
 
@@ -22,7 +22,7 @@ pub const ICP: u64 = 100_000_000; // in e8s
 pub const ICP_FEE: u64 = 10_000; // in e8s
 
 pub fn get_icp_account_balance(env: &PocketIc, account_id: AccountIdentifier) -> u64 {
-    let ledger_canister_id = Principal::from_text("ryjl3-tyaaa-aaaaa-aaaba-cai").unwrap();
+    let ledger_canister_id = MAINNET_LEDGER_CANISTER_ID;
     let account_balance_args = AccountBalanceArgs {
         account: account_id,
     };
@@ -45,7 +45,7 @@ pub fn send_icp_to_account(
     memo: u64,
     from_subaccount: Option<Subaccount>,
 ) -> Result<u64, TransferError> {
-    let ledger_canister_id = Principal::from_text("ryjl3-tyaaa-aaaaa-aaaba-cai").unwrap();
+    let ledger_canister_id = MAINNET_LEDGER_CANISTER_ID;
     let transfer_args = TransferArgs {
         memo: Memo(memo),
         amount: Tokens::from_e8s(e8s),
