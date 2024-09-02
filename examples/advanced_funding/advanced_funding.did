@@ -1,0 +1,5 @@
+type FundingConfig = record {
+  funded_canister_ids : vec principal;
+};
+
+service : (FundingConfig) -> {}
