@@ -52,7 +52,7 @@ fn can_mint_cycles_to_top_up_self() {
 
     let advanced_funding_canister_id = install_advanced_funding_canister(&env, controller, 100_000_000_000, vec![]);
 
-    // 2 ticks important to ensure funding is scheduled in another round
+    // 4 ticks are important to ensure ICP is not converted to cycles immediately when acquired below
     env.tick();
     env.tick();
     env.tick();
