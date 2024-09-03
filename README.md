@@ -1,3 +1,7 @@
+<p>
+  <a href="https://forum.dfinity.org/"><img alt="Chat on the Forum" src="https://img.shields.io/badge/help-post%20on%20forum.dfinity.org-blue"></a>
+</p>
+
 # canfund
 
 Welcome to **`canfund`**! This library simplifies automated cycles management for canisters on the Internet Computer (IC). `canfund` helps ensure your canisters have sufficient cycles by automating the process of balance checking, funding, and cycle-minting based on configurable rules.
