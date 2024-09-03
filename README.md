@@ -8,11 +8,11 @@ Welcome to **`canfund`**! This library simplifies automated cycles management fo
 
 ## Features
 
-- **Automated Cycles Management**: Automatically manages cycles for specified canisters, including the canister running `canfund`, according to your predefined rules.
-- **Cycle Minting**: If your funding canister lacks sufficient cycles, `canfund` can mint new cycles from its or another account's ICP balance.
+- **Automated Cycles Management**: Automatically manages cycles for specified canisters, including the canister running `canfund`, according to predefined rules.
 - **Periodic Balance Monitoring**: `canfund` periodically checks cycle balances using ICP timers, ensuring your canisters stay adequately funded.
-- **Configurable Funding Strategies**: Offers three customizable strategies for managing cycles, allowing you to tailor it to your specific needs.
-- **Flexible Balance Fetching**: Supports multiple methods for fetching the cycle balance of canisters during registration, accommodating different levels of access and canister configurations.
+- **Optional Cycle Minting**: If funding canister lacks sufficient cycles, `canfund` can mint new cycles from its or another account's ICP balance.
+- **Configurable Funding Strategies**: Offers three customizable strategies for managing cycles, allowing you to tailor it to specific needs.
+- **Configurable Balance Fetching**: Supports multiple methods for fetching the cycle balance of canisters during registration, accommodating different levels of access and canister configurations.
 
 ## Table of Contents
 
