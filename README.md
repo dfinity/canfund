@@ -4,7 +4,7 @@
 
 # canfund
 
-Welcome to **`canfund`**! This library simplifies automated cycles management for canisters on the Internet Computer (IC). `canfund` helps ensure your canisters have sufficient cycles by automating the process of balance checking, funding, and cycle-minting based on configurable rules.
+Welcome to **`canfund`**! This library provides automated cycles management for canisters on the Internet Computer (IC). `canfund` helps ensure your canisters have sufficient cycles by automating the process of balance checking, funding, and cycle-minting based on configurable rules.
 
 ## Features
 
