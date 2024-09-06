@@ -10,7 +10,7 @@ Welcome to **`canfund`**! This library provides automated cycles management for 
 
 - **Automated Cycles Management**: Automatically manages cycles for specified canisters, including the canister running `canfund`, according to predefined rules.
 - **Periodic Balance Monitoring**: `canfund` periodically checks cycle balances using ICP timers, ensuring your canisters stay adequately funded.
-- **Optional Cycle Minting**: If funding canister lacks sufficient cycles, `canfund` can mint new cycles from ICP.```
+- **Optional Cycle Minting**: If funding canister lacks sufficient cycles, `canfund` can mint new cycles from ICP.
 - **Configurable Funding Strategies**: Offers three customizable strategies for managing cycles, allowing you to tailor it to specific needs.
 - **Configurable Balance Fetching**: Supports multiple methods for fetching the cycle balance of canisters during registration, accommodating different levels of access and canister configurations.
 
@@ -33,7 +33,7 @@ To integrate `canfund` into your Internet Computer project, add the library as a
 cargo install `canfund`
 ```
 
-Or alternatively manually define the dependency in your `dfx.json` file:
+Or alternatively manually define the dependency in your `Cargo.toml` file:
 
 ```json
 {
