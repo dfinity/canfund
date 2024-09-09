@@ -8,6 +8,8 @@ pub struct CanisterRecord {
     cycles: Option<CyclesBalance>,
     /// The canister cycles balance record when it was last funded.
     previous_cycles: Option<CyclesBalance>,
+    /// The number of cycles deposited in the last check.
+    deposited_cycles: Option<CyclesBalance>,
     /// The method to fetch the canister cycles balance.
     cycles_fetcher: Arc<dyn FetchCyclesBalance>,
 }
@@ -17,6 +19,7 @@ impl CanisterRecord {
         Self {
             cycles: None,
             previous_cycles: None,
+            deposited_cycles: None,
             cycles_fetcher,
         }
     }
@@ -35,6 +38,14 @@ impl CanisterRecord {
 
     pub fn get_previous_cycles(&self) -> &Option<CyclesBalance> {
         &self.previous_cycles
+    }
+
+    pub fn set_deposited_cycles(&mut self, deposited_cycles: CyclesBalance) {
+        self.deposited_cycles = Some(deposited_cycles);
+    }
+
+    pub fn get_deposited_cycles(&self) -> &Option<CyclesBalance> {
+        &self.deposited_cycles
     }
 
     pub fn get_cycles_fetcher(&self) -> Arc<dyn FetchCyclesBalance> {
