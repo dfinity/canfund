@@ -1,6 +1,7 @@
-use std::{fmt::Debug, rc::Rc, sync::Arc};
+use std::{collections::HashMap, fmt::Debug, rc::Rc, sync::Arc};
 
 use candid::Principal;
+use ic_cdk::api::management_canister::main::CanisterId;
 use ic_ledger_types::AccountIdentifier;
 
 use crate::operations::obtain::ObtainCycles;
@@ -183,7 +184,7 @@ pub struct CycleMintingOptions {
     pub icp_account_id: AccountIdentifier,
 }
 
-pub type ObserverCallback = Rc<dyn Fn(Vec<CanisterRecord>) + Send + Sync>;
+pub type ObserverCallback = Rc<dyn Fn(HashMap<CanisterId, CanisterRecord>) + Send + Sync>;
 
 /// The options when initializing the fund manager.
 #[derive(Clone)]

@@ -426,7 +426,7 @@ impl FundManagerCore {
     /// Executes the funding callback if it is set in the options.
     pub fn funding_callback(&self) {
         if let Some(funding_callback) = self.options.funding_callback() {
-            funding_callback(self.canisters.values().cloned().collect());
+            funding_callback(self.canisters.clone());
         }
     }
 }
