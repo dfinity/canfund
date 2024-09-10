@@ -332,6 +332,9 @@ impl FundManager {
                 } 
             }
         }
+
+        // Execute funding callback after the canisters have been funded.
+        manager.borrow().funding_callback();
     }
 
     /// Fetches the cycles balance for the provided canisters and calculates the needed cycles to fund them.
@@ -418,6 +421,13 @@ impl FundManagerCore {
     /// Returns the canister record if it was found.
     pub fn unregister(&mut self, canister_id: CanisterId) -> Option<CanisterRecord> {
         self.canisters.remove(&canister_id)
+    }
+
+    /// Executes the funding callback if it is set in the options.
+    pub fn funding_callback(&self) {
+        if let Some(funding_callback) = self.options.funding_callback() {
+            funding_callback(self.canisters.values().cloned().collect());
+        }
     }
 }
 
