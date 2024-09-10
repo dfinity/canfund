@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use ic_cdk::api::time;
+
 use crate::operations::fetch::FetchCyclesBalance;
 
 #[derive(Clone)]
@@ -8,7 +10,7 @@ pub struct CanisterRecord {
     cycles: Option<CyclesBalance>,
     /// The canister cycles balance record when it was last funded.
     previous_cycles: Option<CyclesBalance>,
-    /// The number of cycles deposited in the last check.
+    /// The cumulative total of cycles deposited to the canister.
     deposited_cycles: Option<CyclesBalance>,
     /// The method to fetch the canister cycles balance.
     cycles_fetcher: Arc<dyn FetchCyclesBalance>,
@@ -40,8 +42,13 @@ impl CanisterRecord {
         &self.previous_cycles
     }
 
-    pub fn set_deposited_cycles(&mut self, deposited_cycles: CyclesBalance) {
-        self.deposited_cycles = Some(deposited_cycles);
+    pub fn add_deposited_cycles(&mut self, cycles: u128) {
+        if let Some(deposited_cycles) = self.deposited_cycles.as_mut() {
+            deposited_cycles.amount = deposited_cycles.amount.saturating_add(cycles);
+            deposited_cycles.timestamp = time();
+        } else {
+            self.deposited_cycles = Some(CyclesBalance::new(cycles, time()));
+        }
     }
 
     pub fn get_deposited_cycles(&self) -> &Option<CyclesBalance> {

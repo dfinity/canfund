@@ -271,15 +271,10 @@ impl FundManager {
                                 .await
                             {
                                 Ok(cycles_obtained) => {
-                                    manager
-                                        .borrow_mut()
-                                        .canisters
-                                        .get_mut(&canister_id)
-                                        .unwrap()
-                                        .set_deposited_cycles(CyclesBalance::new(
-                                            cycles_obtained,
-                                            time(),
-                                        ));
+                                    if let Some(record) = manager.borrow_mut().canisters.get_mut(&canister_id) {
+                                        record.add_deposited_cycles(cycles_obtained);
+                                    }
+
                                     print(format!(
                                         "Obtained {} cycles for canister {}",
                                         cycles_obtained,
@@ -323,15 +318,10 @@ impl FundManager {
                             ));
                         }
                         Ok(_) => {
-                            manager
-                                .borrow_mut()
-                                .canisters
-                                .get_mut(&canister_id)
-                                .unwrap()
-                                .set_deposited_cycles(CyclesBalance::new(
-                                    needed_cycles,
-                                    time(),
-                                ));
+                            if let Some(record) = manager.borrow_mut().canisters.get_mut(&canister_id) {
+                                record.add_deposited_cycles(needed_cycles);
+                            }
+
                             print(format!(
                                 "Funded canister {} with {} cycles",
                                 canister_id.to_text(),
