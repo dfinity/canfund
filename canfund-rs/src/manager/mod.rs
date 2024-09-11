@@ -271,6 +271,10 @@ impl FundManager {
                                 .await
                             {
                                 Ok(cycles_obtained) => {
+                                    if let Some(record) = manager.borrow_mut().canisters.get_mut(&canister_id) {
+                                        record.add_deposited_cycles(CyclesBalance::new(cycles_obtained, time()));
+                                    }
+
                                     print(format!(
                                         "Obtained {} cycles for canister {}",
                                         cycles_obtained,
@@ -301,19 +305,36 @@ impl FundManager {
 
                         print("WARNING: No top-up method configured for topping up the funding canister. Consider configuring `obtain_cycles_options`.");
                     }
-                } else if let Err((err_code, err_msg)) =
-                    deposit_cycles(CanisterIdRecord { canister_id }, needed_cycles).await
-                {
-                    print(format!(
-                        "Failed to fund canister {} with {} cycles, code: {:?} and reason: {:?}",
-                        canister_id.to_text(),
-                        needed_cycles,
-                        err_code,
-                        err_msg
-                    ));
-                }
+                } else {
+                    match deposit_cycles(CanisterIdRecord { canister_id }, needed_cycles).await
+                    {
+                        Err((err_code, err_msg)) => {
+                            print(format!(
+                                "Failed to fund canister {} with {} cycles, code: {:?} and reason: {:?}",
+                                canister_id.to_text(),
+                                needed_cycles,
+                                err_code,
+                                err_msg
+                            ));
+                        }
+                        Ok(_) => {
+                            if let Some(record) = manager.borrow_mut().canisters.get_mut(&canister_id) {
+                                record.add_deposited_cycles(CyclesBalance::new(needed_cycles, time()));
+                            }
+
+                            print(format!(
+                                "Funded canister {} with {} cycles",
+                                canister_id.to_text(),
+                                needed_cycles
+                            ));
+                        }
+                    }
+                } 
             }
         }
+
+        // Execute funding callback after the canisters have been funded.
+        manager.borrow().funding_callback();
     }
 
     /// Fetches the cycles balance for the provided canisters and calculates the needed cycles to fund them.
@@ -400,6 +421,13 @@ impl FundManagerCore {
     /// Returns the canister record if it was found.
     pub fn unregister(&mut self, canister_id: CanisterId) -> Option<CanisterRecord> {
         self.canisters.remove(&canister_id)
+    }
+
+    /// Executes the funding callback if it is set in the options.
+    pub fn funding_callback(&self) {
+        if let Some(funding_callback) = self.options.funding_callback() {
+            funding_callback(self.canisters.clone());
+        }
     }
 }
 

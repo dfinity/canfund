@@ -2,4 +2,7 @@ type FundingConfig = record {
   funded_canister_ids : vec principal;
 };
 
-service : (FundingConfig) -> {}
+service : (FundingConfig) -> {
+  // A method to retrieve the total of deposited cycles per canister.
+  get_deposited_cycles : () -> (vec record { canister_id: principal; deposited_cycles: nat128 }) query;
+}

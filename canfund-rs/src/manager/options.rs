@@ -1,9 +1,12 @@
-use std::{fmt::Debug, sync::Arc};
+use std::{collections::HashMap, fmt::Debug, rc::Rc, sync::Arc};
 
 use candid::Principal;
+use ic_cdk::api::management_canister::main::CanisterId;
 use ic_ledger_types::AccountIdentifier;
 
 use crate::operations::obtain::ObtainCycles;
+
+use super::record::CanisterRecord;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EstimatedRuntime {
@@ -181,6 +184,8 @@ pub struct CycleMintingOptions {
     pub icp_account_id: AccountIdentifier,
 }
 
+pub type ObserverCallback = Rc<dyn Fn(HashMap<CanisterId, CanisterRecord>) + Send + Sync>;
+
 /// The options when initializing the fund manager.
 #[derive(Clone)]
 pub struct FundManagerOptions {
@@ -196,6 +201,8 @@ pub struct FundManagerOptions {
     strategy: FundStrategy,
     /// Obtain cycles options to handle the funding canister balance getting low.
     obtain_cycles_options: Option<ObtainCyclesOptions>,
+    /// Funding callback is executed after a funding round is completed.
+    funding_callback: Option<ObserverCallback>,
 }
 
 impl Default for FundManagerOptions {
@@ -207,6 +214,7 @@ impl Default for FundManagerOptions {
             strategy: FundStrategy::default(),
             delayed_start: false,
             obtain_cycles_options: None,
+            funding_callback: None,
         }
     }
 }
@@ -249,6 +257,12 @@ impl FundManagerOptions {
         self
     }
 
+    /// Set a callback to be executed after a round of funding.
+    pub fn with_funding_callback(mut self, callback: ObserverCallback) -> Self {
+        self.funding_callback = Some(callback);
+        self
+    }
+
     /// Get the interval in secs to track the canister balance.
     pub fn interval_secs(&self) -> u64 {
         self.interval_secs
@@ -272,6 +286,11 @@ impl FundManagerOptions {
     /// Get if the fund manager should start immediately or wait for the interval to pass upon calling `start`.
     pub fn delayed_start(&self) -> bool {
         self.delayed_start
+    }
+
+    /// Get the funding callback to call when a funding round is completed.
+    pub fn funding_callback(&self) -> Option<ObserverCallback> {
+        self.funding_callback.clone()
     }
 }
 
