@@ -2,7 +2,7 @@ use std::{cell::RefCell, rc::Rc, sync::Arc};
 
 use candid::{self, CandidType, Deserialize, Principal};
 use canfund::{api::{cmc::IcCyclesMintingCanister, ledger::IcLedgerCanister}, manager::{options::{EstimatedRuntime, FundManagerOptions, FundStrategy, ObtainCyclesOptions}, RegisterOpts}, operations::{fetch::FetchCyclesBalanceFromCanisterStatus, obtain::MintCycles}, FundManager};
-use ic_cdk::id;
+use ic_cdk::{id, query};
 use ic_cdk_macros::{init, post_upgrade};
 use ic_ledger_types::{Subaccount, DEFAULT_SUBACCOUNT, MAINNET_CYCLES_MINTING_CANISTER_ID, MAINNET_LEDGER_CANISTER_ID};
 
@@ -92,5 +92,26 @@ pub fn get_obtain_cycles_config() -> Option<ObtainCyclesOptions> {
             from_subaccount: Subaccount::from(DEFAULT_SUBACCOUNT),
         }),
         top_up_self: true,
+    })
+}
+
+#[derive(CandidType, Deserialize)]
+pub struct GetDepositedCyclesRetItem {
+  pub deposited_cycles: u128,
+  pub canister_id: Principal,
+}
+
+#[query(name = "get_deposited_cycles")]
+fn get_deposited_cycles() -> Vec<GetDepositedCyclesRetItem> {
+    FUND_MANAGER.with(|fund_manager| {
+        let fund_manager = fund_manager.borrow();
+        
+        fund_manager.get_canisters().iter().map(|(canister_id, record)| {
+            let deposited_cycles = record.get_deposited_cycles().as_ref().map(|c| c.amount).unwrap_or(0);
+            GetDepositedCyclesRetItem {
+                deposited_cycles,
+                canister_id: *canister_id,
+            }
+        }).collect()
     })
 }

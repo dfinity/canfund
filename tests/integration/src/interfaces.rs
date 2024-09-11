@@ -1,6 +1,7 @@
 use candid::{CandidType, Principal};
 use ic_ledger_types::{AccountBalanceArgs, AccountIdentifier, Memo, Subaccount, Tokens, TransferArgs, TransferError, MAINNET_LEDGER_CANISTER_ID};
-use pocket_ic::{update_candid_as, PocketIc};
+use pocket_ic::{query_candid_as, update_candid_as, PocketIc};
+use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 
 #[derive(CandidType)]
@@ -62,5 +63,24 @@ pub fn send_icp_to_account(
         (transfer_args,),
     )
     .unwrap();
+    res.0
+}
+
+#[derive(CandidType, Deserialize, Debug)]
+pub struct GetDepositedCyclesRetItem {
+  pub deposited_cycles: u128,
+  pub canister_id: Principal,
+}
+
+pub fn query_deposited_cycles(env: &PocketIc, canister_id: Principal) -> Vec<GetDepositedCyclesRetItem> {
+    let res: (Vec<GetDepositedCyclesRetItem>,) = query_candid_as(
+        env,
+        canister_id,
+        Principal::anonymous(),
+        "get_deposited_cycles",
+        (),
+    )
+    .unwrap();
+
     res.0
 }
