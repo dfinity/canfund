@@ -272,7 +272,7 @@ impl FundManager {
                             {
                                 Ok(cycles_obtained) => {
                                     if let Some(record) = manager.borrow_mut().canisters.get_mut(&canister_id) {
-                                        record.add_deposited_cycles(cycles_obtained);
+                                        record.add_deposited_cycles(CyclesBalance::new(cycles_obtained, time()));
                                     }
 
                                     print(format!(
@@ -319,7 +319,7 @@ impl FundManager {
                         }
                         Ok(_) => {
                             if let Some(record) = manager.borrow_mut().canisters.get_mut(&canister_id) {
-                                record.add_deposited_cycles(needed_cycles);
+                                record.add_deposited_cycles(CyclesBalance::new(needed_cycles, time()));
                             }
 
                             print(format!(
@@ -332,6 +332,9 @@ impl FundManager {
                 } 
             }
         }
+
+        // Execute funding callback after the canisters have been funded.
+        manager.borrow().funding_callback();
     }
 
     /// Fetches the cycles balance for the provided canisters and calculates the needed cycles to fund them.
@@ -418,6 +421,13 @@ impl FundManagerCore {
     /// Returns the canister record if it was found.
     pub fn unregister(&mut self, canister_id: CanisterId) -> Option<CanisterRecord> {
         self.canisters.remove(&canister_id)
+    }
+
+    /// Executes the funding callback if it is set in the options.
+    pub fn funding_callback(&self) {
+        if let Some(funding_callback) = self.options.funding_callback() {
+            funding_callback(self.canisters.clone());
+        }
     }
 }
 

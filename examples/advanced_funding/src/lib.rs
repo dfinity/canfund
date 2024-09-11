@@ -1,4 +1,4 @@
-use std::{cell::RefCell, sync::Arc};
+use std::{cell::RefCell, rc::Rc, sync::Arc};
 
 use candid::{self, CandidType, Deserialize, Principal};
 use canfund::{api::{cmc::IcCyclesMintingCanister, ledger::IcLedgerCanister}, manager::{options::{EstimatedRuntime, FundManagerOptions, FundStrategy, ObtainCyclesOptions}, RegisterOpts}, operations::{fetch::FetchCyclesBalanceFromCanisterStatus, obtain::MintCycles}, FundManager};
@@ -40,7 +40,15 @@ pub fn start_canister_cycles_monitoring(config: FundingConfig) {
                     .with_max_runtime_cycles_fund(1_000_000_000_000)
                     .with_fallback_min_cycles(125_000_000_000)
                     .with_fallback_fund_cycles(250_000_000_000),
-        ));
+            ))
+            .with_funding_callback(Rc::new(|records| {
+                // Loop over the hashmap of canister records and print the cycles balance and total of deposited cycles
+                for (canister_id, record) in records.iter() {
+                    let cycles = record.get_cycles().as_ref().map(|c| c.amount).unwrap_or(0);
+                    let deposited_cycles = record.get_deposited_cycles().as_ref().map(|c| c.amount).unwrap_or(0);
+                    ic_cdk::print(format!("Canister {} had {} cycles and got {} deposited cycles", canister_id, cycles, deposited_cycles));
+                }
+            }));
 
         fund_manager_options = fund_manager_options.with_obtain_cycles_options(
             get_obtain_cycles_config(),

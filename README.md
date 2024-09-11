@@ -14,6 +14,7 @@ Welcome to **`canfund`**! This library provides automated cycles management for 
 - **Optional Cycle Minting**: If funding canister lacks sufficient cycles, `canfund` can mint new cycles from ICP.
 - **Configurable Funding Strategies**: Offers three customizable strategies for managing cycles, allowing you to tailor it to specific needs.
 - **Configurable Balance Fetching**: Supports multiple methods for fetching the cycle balance of canisters during registration, accommodating different levels of access and canister configurations.
+- **Funding Callback**: Canfund supports providing a callback function that is triggered after each funding round, which can be used for monitoring or logging purposes.
 
 ## Table of Contents
 
@@ -23,6 +24,7 @@ Welcome to **`canfund`**! This library provides automated cycles management for 
   - [Canister Registration](#canister-registration)
   - [Funding Strategies](#funding-strategies)
   - [Minting Cycles](#obtaining-cycles)
+  - [Funding Callback](#funding-callback)
 - [Examples](#examples)
 - [License](#license)
 
@@ -41,7 +43,7 @@ Or alternatively manually define the dependency in your `Cargo.toml` file:
   "dependencies": {
     "canfund": {
       "git": "https://github.com/dfinity/canfund",
-      "version": "0.0.2-alpha.2"
+      "version": "0.1.0"
     }
   }
 }
@@ -155,6 +157,20 @@ funding_options.with_obtain_cycles_options(Some(obtain_cycles_config));
 ```
 
 With this configuration, `canfund` will periodically check the ICP balance and mint new cycles as needed to ensure that your canisters remain adequately funded.
+
+### Funding Callback
+
+`canfund` also supports registering a callback function that will be triggered after a funding round is completed. This feature is useful for monitoring and logging purposes, allowing you to capture and read data such as the remaining cycle balances and total cycles deposited per canister.
+
+Example of registering a callback:
+
+```rust
+let funding_config = FundManagerOptions::new()
+    .with_funding_callback(Rc::new(|canister_records| {
+        // custom monitoring || logging logic
+    })
+); 
+```
 
 
 ### Initialization

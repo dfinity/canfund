@@ -9,7 +9,7 @@ path = "src/lib.rs"
 
 [dependencies]
 candid = { workspace = true }
-canfund = { path = "../../canfund-rs", version = "0.0.2-alpha.2" }
+canfund = { path = "../../canfund-rs", version = "0.1.0" }
 ic-cdk = { workspace = true }
 ic-cdk-macros = { workspace = true }
 ic-ledger-types = { workspace = true }

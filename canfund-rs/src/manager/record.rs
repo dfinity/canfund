@@ -1,7 +1,5 @@
 use std::sync::Arc;
 
-use ic_cdk::api::time;
-
 use crate::operations::fetch::FetchCyclesBalance;
 
 #[derive(Clone)]
@@ -42,12 +40,12 @@ impl CanisterRecord {
         &self.previous_cycles
     }
 
-    pub fn add_deposited_cycles(&mut self, cycles: u128) {
+    pub fn add_deposited_cycles(&mut self, cycles: CyclesBalance) {
         if let Some(deposited_cycles) = self.deposited_cycles.as_mut() {
-            deposited_cycles.amount = deposited_cycles.amount.saturating_add(cycles);
-            deposited_cycles.timestamp = time();
+            deposited_cycles.amount = deposited_cycles.amount.saturating_add(cycles.amount);
+            deposited_cycles.timestamp = cycles.timestamp;
         } else {
-            self.deposited_cycles = Some(CyclesBalance::new(cycles, time()));
+            self.deposited_cycles = Some(cycles);
         }
     }
 
@@ -73,5 +71,34 @@ impl CyclesBalance {
     /// Constructs a new CyclesBalance with the specified amount and timestamp.
     pub fn new(amount: u128, timestamp: u64) -> Self {
         Self { amount, timestamp }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::operations::fetch::FetchOwnCyclesBalance;
+
+    use super::*;
+
+    #[test]
+    fn test_canister_record() {
+        let cycles_fetcher = Arc::new(FetchOwnCyclesBalance);
+        let mut canister_record = CanisterRecord::new(cycles_fetcher);
+
+        let cycles = CyclesBalance::new(100, 0);
+        canister_record.set_cycles(cycles.clone());
+        assert_eq!(canister_record.get_cycles(), &Some(cycles));
+        assert_eq!(canister_record.get_previous_cycles(), &None);
+
+        let previous_cycles = canister_record.get_cycles().as_ref().unwrap().clone();
+        canister_record.set_cycles(CyclesBalance::new(200, 0));
+        assert_eq!(canister_record.get_previous_cycles(), &Some(previous_cycles));
+
+        let deposited_cycles = CyclesBalance::new(50, 1234567890);
+        canister_record.add_deposited_cycles(deposited_cycles.clone());
+        assert_eq!(canister_record.get_deposited_cycles(), &Some(CyclesBalance::new(50, deposited_cycles.timestamp)));
+
+        canister_record.add_deposited_cycles(deposited_cycles.clone());
+        assert_eq!(canister_record.get_deposited_cycles(), &Some(CyclesBalance::new(100, deposited_cycles.timestamp)));
     }
 }
