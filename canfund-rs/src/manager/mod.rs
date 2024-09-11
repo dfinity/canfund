@@ -272,7 +272,7 @@ impl FundManager {
                             {
                                 Ok(cycles_obtained) => {
                                     if let Some(record) = manager.borrow_mut().canisters.get_mut(&canister_id) {
-                                        record.add_deposited_cycles(cycles_obtained);
+                                        record.add_deposited_cycles(CyclesBalance::new(cycles_obtained, time()));
                                     }
 
                                     print(format!(
@@ -319,7 +319,7 @@ impl FundManager {
                         }
                         Ok(_) => {
                             if let Some(record) = manager.borrow_mut().canisters.get_mut(&canister_id) {
-                                record.add_deposited_cycles(needed_cycles);
+                                record.add_deposited_cycles(CyclesBalance::new(needed_cycles, time()));
                             }
 
                             print(format!(
