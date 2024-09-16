@@ -68,7 +68,7 @@ lazy_static! {
             std::process::exit(1);
         }
     };
-    
+
     static ref DEPENDENCIES: Vec<PathBuf> =
         vec![WORKSPACE_ROOT.join("examples"), WORKSPACE_ROOT.join("canfund-rs")];
 
@@ -249,7 +249,8 @@ pub fn download_icp_ledger_wasm() {
 
     let icp_ledger_wasm_url = "https://download.dfinity.systems/ic/3d6a76efba59d6f03026d6b7c1c9a1dfce96ee93/canisters/ledger-canister.wasm.gz";
 
-    download(&icp_ledger_wasm_url, &OUT_DIR.join("icp_ledger.wasm.gz")).expect("Failed to download icp_ledger.wasm.gz");
+    download(&icp_ledger_wasm_url, &OUT_DIR.join("icp_ledger.wasm.gz"))
+        .expect("Failed to download icp_ledger.wasm.gz");
 }
 
 pub fn download_cmc_wasm() {

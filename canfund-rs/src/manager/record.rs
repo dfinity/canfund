@@ -92,13 +92,22 @@ mod tests {
 
         let previous_cycles = canister_record.get_cycles().as_ref().unwrap().clone();
         canister_record.set_cycles(CyclesBalance::new(200, 0));
-        assert_eq!(canister_record.get_previous_cycles(), &Some(previous_cycles));
+        assert_eq!(
+            canister_record.get_previous_cycles(),
+            &Some(previous_cycles)
+        );
 
         let deposited_cycles = CyclesBalance::new(50, 1234567890);
         canister_record.add_deposited_cycles(deposited_cycles.clone());
-        assert_eq!(canister_record.get_deposited_cycles(), &Some(CyclesBalance::new(50, deposited_cycles.timestamp)));
+        assert_eq!(
+            canister_record.get_deposited_cycles(),
+            &Some(CyclesBalance::new(50, deposited_cycles.timestamp))
+        );
 
         canister_record.add_deposited_cycles(deposited_cycles.clone());
-        assert_eq!(canister_record.get_deposited_cycles(), &Some(CyclesBalance::new(100, deposited_cycles.timestamp)));
+        assert_eq!(
+            canister_record.get_deposited_cycles(),
+            &Some(CyclesBalance::new(100, deposited_cycles.timestamp))
+        );
     }
 }
