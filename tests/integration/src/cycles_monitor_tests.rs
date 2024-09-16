@@ -2,8 +2,13 @@ use std::time::Duration;
 
 use ic_ledger_types::{AccountIdentifier, DEFAULT_SUBACCOUNT};
 
-use crate::interfaces::{get_icp_account_balance, send_icp_to_account, query_deposited_cycles, ICP};
-use crate::setup::{install_advanced_funding_canister, install_funded_canister, install_simple_funding_canister, setup_new_env};
+use crate::interfaces::{
+    get_icp_account_balance, query_deposited_cycles, send_icp_to_account, ICP,
+};
+use crate::setup::{
+    install_advanced_funding_canister, install_funded_canister, install_simple_funding_canister,
+    setup_new_env,
+};
 use crate::utils::{advance_time_to_burn_cycles, controller_test_id};
 use crate::TestEnv;
 
@@ -15,10 +20,24 @@ fn successfuly_monitors_funded_canister_and_tops_up() {
 
     let top_up_should_happen_when_cycles_below = 125_000_000_000;
 
-    let funded_canister_id = install_funded_canister(&env, controller, top_up_should_happen_when_cycles_below + 5_000_000_000);
-    let funding_canister_id = install_simple_funding_canister(&env, controller, 100_000_000_000_000, vec![funded_canister_id]);
+    let funded_canister_id = install_funded_canister(
+        &env,
+        controller,
+        top_up_should_happen_when_cycles_below + 5_000_000_000,
+    );
+    let funding_canister_id = install_simple_funding_canister(
+        &env,
+        controller,
+        100_000_000_000_000,
+        vec![funded_canister_id],
+    );
 
-    env.set_controllers(funded_canister_id, Some(controller), vec![controller, funding_canister_id]).unwrap();
+    env.set_controllers(
+        funded_canister_id,
+        Some(controller),
+        vec![controller, funding_canister_id],
+    )
+    .unwrap();
 
     let funded_canister_cycles_balance = env.cycle_balance(funded_canister_id);
     if funded_canister_cycles_balance <= top_up_should_happen_when_cycles_below {
@@ -50,10 +69,24 @@ fn successfuly_stores_funding_data() {
 
     let top_up_should_happen_when_cycles_below = 125_000_000_000;
 
-    let funded_canister_id = install_funded_canister(&env, controller, top_up_should_happen_when_cycles_below + 5_000_000_000);
-    let funding_canister_id = install_advanced_funding_canister(&env, controller, 100_000_000_000_000, vec![funded_canister_id]);
+    let funded_canister_id = install_funded_canister(
+        &env,
+        controller,
+        top_up_should_happen_when_cycles_below + 5_000_000_000,
+    );
+    let funding_canister_id = install_advanced_funding_canister(
+        &env,
+        controller,
+        100_000_000_000_000,
+        vec![funded_canister_id],
+    );
 
-    env.set_controllers(funded_canister_id, Some(controller), vec![controller, funding_canister_id]).unwrap();
+    env.set_controllers(
+        funded_canister_id,
+        Some(controller),
+        vec![controller, funding_canister_id],
+    )
+    .unwrap();
 
     let funded_canister_cycles_balance = env.cycle_balance(funded_canister_id);
     if funded_canister_cycles_balance <= top_up_should_happen_when_cycles_below {
@@ -110,19 +143,18 @@ fn successfuly_stores_funding_data() {
 #[test]
 fn can_mint_cycles_to_top_up_self() {
     let TestEnv {
-        env,
-        controller,
-        ..
+        env, controller, ..
     } = setup_new_env();
 
-    let advanced_funding_canister_id = install_advanced_funding_canister(&env, controller, 100_000_000_000, vec![]);
+    let advanced_funding_canister_id =
+        install_advanced_funding_canister(&env, controller, 100_000_000_000, vec![]);
 
     // 4 ticks are important to ensure ICP is not converted to cycles immediately when acquired below
     env.tick();
     env.tick();
     env.tick();
     env.tick();
-    
+
     let account_id = AccountIdentifier::new(&advanced_funding_canister_id, &DEFAULT_SUBACCOUNT);
     send_icp_to_account(&env, controller, account_id, 100 * ICP, 0, None).unwrap();
     let pre_cycle_balance = env.cycle_balance(advanced_funding_canister_id);

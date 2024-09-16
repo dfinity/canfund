@@ -271,8 +271,13 @@ impl FundManager {
                                 .await
                             {
                                 Ok(cycles_obtained) => {
-                                    if let Some(record) = manager.borrow_mut().canisters.get_mut(&canister_id) {
-                                        record.add_deposited_cycles(CyclesBalance::new(cycles_obtained, time()));
+                                    if let Some(record) =
+                                        manager.borrow_mut().canisters.get_mut(&canister_id)
+                                    {
+                                        record.add_deposited_cycles(CyclesBalance::new(
+                                            cycles_obtained,
+                                            time(),
+                                        ));
                                     }
 
                                     print(format!(
@@ -306,8 +311,7 @@ impl FundManager {
                         print("WARNING: No top-up method configured for topping up the funding canister. Consider configuring `obtain_cycles_options`.");
                     }
                 } else {
-                    match deposit_cycles(CanisterIdRecord { canister_id }, needed_cycles).await
-                    {
+                    match deposit_cycles(CanisterIdRecord { canister_id }, needed_cycles).await {
                         Err((err_code, err_msg)) => {
                             print(format!(
                                 "Failed to fund canister {} with {} cycles, code: {:?} and reason: {:?}",
@@ -318,8 +322,13 @@ impl FundManager {
                             ));
                         }
                         Ok(_) => {
-                            if let Some(record) = manager.borrow_mut().canisters.get_mut(&canister_id) {
-                                record.add_deposited_cycles(CyclesBalance::new(needed_cycles, time()));
+                            if let Some(record) =
+                                manager.borrow_mut().canisters.get_mut(&canister_id)
+                            {
+                                record.add_deposited_cycles(CyclesBalance::new(
+                                    needed_cycles,
+                                    time(),
+                                ));
                             }
 
                             print(format!(
@@ -329,7 +338,7 @@ impl FundManager {
                             ));
                         }
                     }
-                } 
+                }
             }
         }
 

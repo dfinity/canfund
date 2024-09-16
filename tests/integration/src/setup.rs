@@ -1,13 +1,14 @@
-use crate::interfaces::{
-    NnsLedgerCanisterInitPayload, NnsLedgerCanisterPayload,
-};
+use crate::interfaces::{NnsLedgerCanisterInitPayload, NnsLedgerCanisterPayload};
 use crate::utils::{controller_test_id, minter_test_id, COUNTER_WAT};
 use crate::{CanisterIds, TestEnv};
 use candid::{CandidType, Encode, Principal};
-use simple_funding::FundingConfig;
-use ic_ledger_types::{AccountIdentifier, Tokens, DEFAULT_SUBACCOUNT, MAINNET_CYCLES_MINTING_CANISTER_ID, MAINNET_LEDGER_CANISTER_ID};
+use ic_ledger_types::{
+    AccountIdentifier, Tokens, DEFAULT_SUBACCOUNT, MAINNET_CYCLES_MINTING_CANISTER_ID,
+    MAINNET_LEDGER_CANISTER_ID,
+};
 use pocket_ic::{PocketIc, PocketIcBuilder};
 use serde::Serialize;
+use simple_funding::FundingConfig;
 use std::collections::{HashMap, HashSet};
 use std::env;
 use std::fs::File;
@@ -84,11 +85,7 @@ pub fn create_canister_with_cycles(
     canister_id
 }
 
-fn install_canisters(
-    env: &PocketIc,
-    controller: Principal,
-    minter: Principal,
-) -> CanisterIds {
+fn install_canisters(env: &PocketIc, controller: Principal, minter: Principal) -> CanisterIds {
     let nns_ledger_canister_id = env
         .create_canister_with_id(Some(controller), None, MAINNET_LEDGER_CANISTER_ID)
         .unwrap();
@@ -144,15 +141,15 @@ fn install_canisters(
     }
 }
 
-pub fn install_simple_funding_canister(env: &PocketIc, controller: Principal, cycles: u128, funded_canister_ids: Vec<Principal>) -> Principal {
+pub fn install_simple_funding_canister(
+    env: &PocketIc,
+    controller: Principal,
+    cycles: u128,
+    funded_canister_ids: Vec<Principal>,
+) -> Principal {
     // simple funding canister starts with more cycles so it does not run out of cycles before the funded canister does
-    let funding_canister_id = create_canister_with_cycles(
-        env,
-        controller,
-        cycles,
-    );
+    let funding_canister_id = create_canister_with_cycles(env, controller, cycles);
 
-    
     let funding_canister_wasm = get_canister_wasm("simple_funding").to_vec();
     let funding_canister_args = FundingConfig {
         funded_canister_ids,
@@ -163,19 +160,19 @@ pub fn install_simple_funding_canister(env: &PocketIc, controller: Principal, cy
         Encode!(&funding_canister_args).unwrap(),
         Some(controller),
     );
-    
+
     funding_canister_id
 }
 
-pub fn install_advanced_funding_canister(env: &PocketIc, controller: Principal, cycles: u128, funded_canister_ids: Vec<Principal>) -> Principal {
+pub fn install_advanced_funding_canister(
+    env: &PocketIc,
+    controller: Principal,
+    cycles: u128,
+    funded_canister_ids: Vec<Principal>,
+) -> Principal {
     // simple funding canister starts with more cycles so it does not run out of cycles before the funded canister does
-    let funding_canister_id = create_canister_with_cycles(
-        env,
-        controller,
-        cycles,
-    );
+    let funding_canister_id = create_canister_with_cycles(env, controller, cycles);
 
-    
     let funding_canister_wasm = get_canister_wasm("advanced_funding").to_vec();
     let funding_canister_args = FundingConfig {
         funded_canister_ids,
@@ -186,20 +183,21 @@ pub fn install_advanced_funding_canister(env: &PocketIc, controller: Principal, 
         Encode!(&funding_canister_args).unwrap(),
         Some(controller),
     );
-    
+
     funding_canister_id
 }
 
 pub fn install_funded_canister(env: &PocketIc, controller: Principal, cycles: u128) -> Principal {
     // simple canister to burn cycles and trigger funding rules
-    let funded_canister_id = create_canister_with_cycles(
-        env, 
-        controller, 
-        cycles,
-    );
+    let funded_canister_id = create_canister_with_cycles(env, controller, cycles);
     let module_bytes = wat::parse_str(COUNTER_WAT).unwrap();
-    env.install_canister(funded_canister_id, module_bytes.clone(), vec![], Some(controller));
-    
+    env.install_canister(
+        funded_canister_id,
+        module_bytes.clone(),
+        vec![],
+        Some(controller),
+    );
+
     funded_canister_id
 }
 
