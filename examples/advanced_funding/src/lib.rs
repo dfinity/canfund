@@ -13,7 +13,7 @@ use canfund::{
 use ic_cdk::{id, query};
 use ic_cdk_macros::{init, post_upgrade};
 use ic_ledger_types::{
-    Subaccount, DEFAULT_SUBACCOUNT, MAINNET_CYCLES_MINTING_CANISTER_ID, MAINNET_LEDGER_CANISTER_ID,
+    DEFAULT_SUBACCOUNT, MAINNET_CYCLES_MINTING_CANISTER_ID, MAINNET_LEDGER_CANISTER_ID,
 };
 
 thread_local! {
@@ -100,7 +100,7 @@ pub fn get_obtain_cycles_config() -> Option<ObtainCyclesOptions> {
             cmc: Arc::new(IcCyclesMintingCanister::new(
                 MAINNET_CYCLES_MINTING_CANISTER_ID,
             )),
-            from_subaccount: Subaccount::from(DEFAULT_SUBACCOUNT),
+            from_subaccount: DEFAULT_SUBACCOUNT,
         }),
         top_up_self: true,
     })

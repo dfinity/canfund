@@ -40,7 +40,7 @@ lazy_static! {
                 "--no-deps",
                 "--format-version=1",
                 "--manifest-path",
-                &manifest_path.to_str().unwrap(),
+                manifest_path.to_str().unwrap(),
             ])
             .output()
             .expect("Failed to execute cargo metadata");
@@ -249,7 +249,7 @@ pub fn download_icp_ledger_wasm() {
 
     let icp_ledger_wasm_url = "https://download.dfinity.systems/ic/3d6a76efba59d6f03026d6b7c1c9a1dfce96ee93/canisters/ledger-canister.wasm.gz";
 
-    download(&icp_ledger_wasm_url, &OUT_DIR.join("icp_ledger.wasm.gz"))
+    download(icp_ledger_wasm_url, &OUT_DIR.join("icp_ledger.wasm.gz"))
         .expect("Failed to download icp_ledger.wasm.gz");
 }
 
@@ -261,7 +261,7 @@ pub fn download_cmc_wasm() {
 
     let cmc_wasm_url = "https://download.dfinity.systems/ic/3d6a76efba59d6f03026d6b7c1c9a1dfce96ee93/canisters/cycles-minting-canister.wasm.gz";
 
-    download(&cmc_wasm_url, &OUT_DIR.join("cmc.wasm.gz")).expect("Failed to download cmc.wasm.gz");
+    download(cmc_wasm_url, &OUT_DIR.join("cmc.wasm.gz")).expect("Failed to download cmc.wasm.gz");
 }
 
 pub fn main() {
