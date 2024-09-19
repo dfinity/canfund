@@ -42,8 +42,10 @@ pub struct FundManagerCore {
 
 /// RegisterOpts holds the options for registering a canister to be monitored by the fund manager.
 /// By default it uses the `FetchCyclesBalanceFromCanisterStatus` to fetch the cycles balance.
+/// The fund strategy is set to `None` by default, meaning that the global strategy will be applied.
 pub struct RegisterOpts {
     pub cycles_fetcher: Arc<dyn FetchCyclesBalance>,
+    pub strategy: Option<FundStrategy>,
 }
 
 impl RegisterOpts {
@@ -51,12 +53,19 @@ impl RegisterOpts {
     pub fn new() -> Self {
         Self {
             cycles_fetcher: Arc::new(FetchCyclesBalanceFromCanisterStatus {}),
+            strategy: None,
         }
     }
 
     /// Sets the cycles fetcher for the register options.
     pub fn with_cycles_fetcher(mut self, cycles_fetcher: Arc<dyn FetchCyclesBalance>) -> Self {
         self.cycles_fetcher = cycles_fetcher;
+        self
+    }
+
+    /// Sets the funding strategy for the register options.
+    pub fn with_strategy(mut self, strategy: FundStrategy) -> Self {
+        self.strategy = Some(strategy);
         self
     }
 }
@@ -237,7 +246,12 @@ impl FundManager {
                         &maybe_funding_canister_record
                             .as_ref()
                             .and_then(|record| record.get_previous_cycles().clone()),
-                        manager.borrow().options().strategy(),
+                            // pass in the strategy from maybe_funding_canister_record if it is not None, 
+                            // otherwise use the global strategy
+                        &maybe_funding_canister_record 
+                            .as_ref()
+                            .and_then(|record| record.get_strategy().clone())
+                            .unwrap_or_else(|| manager.borrow().options.strategy().clone()),
                     );
 
                     funding_canister_needed_cycles > 0
@@ -375,7 +389,11 @@ impl FundManager {
                         let needed_cycles = calc_needed_cycles(
                             &canister_record.get_cycles().clone().unwrap_or_default(),
                             canister_record.get_previous_cycles(),
-                            options.strategy(),
+                            // use canister record strategy if it is not None, otherwise use the global strategy
+                            &canister_record
+                                .get_strategy()
+                                .as_ref()
+                                .unwrap_or_else(|| options.strategy()),
                         );
 
                         if needed_cycles > 0 {
@@ -417,7 +435,7 @@ impl FundManagerCore {
     pub fn register(&mut self, canister_id: CanisterId, opts: RegisterOpts) {
         match self.canisters.entry(canister_id) {
             Entry::Vacant(entry) => {
-                entry.insert(CanisterRecord::new(opts.cycles_fetcher));
+                entry.insert(CanisterRecord::new(opts.cycles_fetcher, opts.strategy));
             }
             Entry::Occupied(_) => {
                 // The canister is already registered so ignore.

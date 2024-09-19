@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use crate::operations::fetch::FetchCyclesBalance;
 
+use super::options::FundStrategy;
+
 #[derive(Clone)]
 pub struct CanisterRecord {
     /// The canister cycles balance record for the last check.
@@ -12,15 +14,18 @@ pub struct CanisterRecord {
     deposited_cycles: Option<CyclesBalance>,
     /// The method to fetch the canister cycles balance.
     cycles_fetcher: Arc<dyn FetchCyclesBalance>,
+    /// Optional fund strategy for the canister which overrides the global strategy.
+    strategy: Option<FundStrategy>,
 }
 
 impl CanisterRecord {
-    pub fn new(cycles_fetcher: Arc<dyn FetchCyclesBalance>) -> Self {
+    pub fn new(cycles_fetcher: Arc<dyn FetchCyclesBalance>, strategy: Option<FundStrategy>) -> Self {
         Self {
             cycles: None,
             previous_cycles: None,
             deposited_cycles: None,
             cycles_fetcher,
+            strategy,
         }
     }
 
@@ -56,6 +61,10 @@ impl CanisterRecord {
     pub fn get_cycles_fetcher(&self) -> Arc<dyn FetchCyclesBalance> {
         self.cycles_fetcher.clone()
     }
+
+    pub fn get_strategy(&self) -> &Option<FundStrategy> {
+        &self.strategy
+    }
 }
 
 /// The canister cycles balance record.
@@ -83,7 +92,7 @@ mod tests {
     #[test]
     fn test_canister_record() {
         let cycles_fetcher = Arc::new(FetchOwnCyclesBalance);
-        let mut canister_record = CanisterRecord::new(cycles_fetcher);
+        let mut canister_record = CanisterRecord::new(cycles_fetcher, None);
 
         let cycles = CyclesBalance::new(100, 0);
         canister_record.set_cycles(cycles.clone());
