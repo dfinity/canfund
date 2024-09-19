@@ -4,7 +4,10 @@ use candid::{self, CandidType, Deserialize, Principal};
 use canfund::{
     api::{cmc::IcCyclesMintingCanister, ledger::IcLedgerCanister},
     manager::{
-        options::{CyclesThreshold, EstimatedRuntime, FundManagerOptions, FundStrategy, ObtainCyclesOptions},
+        options::{
+            CyclesThreshold, EstimatedRuntime, FundManagerOptions, FundStrategy,
+            ObtainCyclesOptions,
+        },
         RegisterOpts,
     },
     operations::{fetch::FetchCyclesBalanceFromCanisterStatus, obtain::MintCycles},
@@ -86,12 +89,12 @@ pub fn start_canister_cycles_monitoring(config: FundingConfig) {
         fund_manager.register(
             id(),
             RegisterOpts::new()
-            .with_cycles_fetcher(Arc::new(FetchCyclesBalanceFromCanisterStatus))
-            .with_strategy(FundStrategy::BelowThreshold(
-                CyclesThreshold::new()
-                    .with_min_cycles(125_000_000_000)
-                    .with_fund_cycles(750_000_000_000),
-            )),
+                .with_cycles_fetcher(Arc::new(FetchCyclesBalanceFromCanisterStatus))
+                .with_strategy(FundStrategy::BelowThreshold(
+                    CyclesThreshold::new()
+                        .with_min_cycles(125_000_000_000)
+                        .with_fund_cycles(750_000_000_000),
+                )),
         );
 
         fund_manager.start();

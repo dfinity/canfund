@@ -246,9 +246,7 @@ impl FundManager {
                         &maybe_funding_canister_record
                             .as_ref()
                             .and_then(|record| record.get_previous_cycles().clone()),
-                            // pass in the strategy from maybe_funding_canister_record if it is not None, 
-                            // otherwise use the global strategy
-                        &maybe_funding_canister_record 
+                        &maybe_funding_canister_record
                             .as_ref()
                             .and_then(|record| record.get_strategy().clone())
                             .unwrap_or_else(|| manager.borrow().options.strategy().clone()),
@@ -389,8 +387,7 @@ impl FundManager {
                         let needed_cycles = calc_needed_cycles(
                             &canister_record.get_cycles().clone().unwrap_or_default(),
                             canister_record.get_previous_cycles(),
-                            // use canister record strategy if it is not None, otherwise use the global strategy
-                            &canister_record
+                            canister_record
                                 .get_strategy()
                                 .as_ref()
                                 .unwrap_or_else(|| options.strategy()),

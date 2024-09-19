@@ -19,7 +19,10 @@ pub struct CanisterRecord {
 }
 
 impl CanisterRecord {
-    pub fn new(cycles_fetcher: Arc<dyn FetchCyclesBalance>, strategy: Option<FundStrategy>) -> Self {
+    pub fn new(
+        cycles_fetcher: Arc<dyn FetchCyclesBalance>,
+        strategy: Option<FundStrategy>,
+    ) -> Self {
         Self {
             cycles: None,
             previous_cycles: None,
