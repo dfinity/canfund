@@ -1,3 +1,15 @@
+## 0.2.0 (2024-09-23)
+
+
+### 🚀 Features
+
+- per-canister funding override functionality
+
+
+### ❤️  Thank You
+
+- Jan Hrubes
+
 ## 0.1.0 (2024-09-10)
 
 
