@@ -58,7 +58,7 @@ fn successfuly_monitors_funded_canister_and_tops_up() {
     env.tick();
     env.tick();
 
-    assert!(env.cycle_balance(funded_canister_id) > 350_000_000_000);
+    assert!(env.cycle_balance(funded_canister_id) > 500_000_000_000);
 }
 
 #[test]
@@ -179,7 +179,7 @@ fn can_mint_cycles_to_top_up_self() {
 
     // assert that while we lose some cycles during the process, it'll be roughly what we expect
     assert!(
-        post_cycle_balance - pre_cycle_balance > 249_000_000_000
-            && post_cycle_balance - pre_cycle_balance < 250_000_000_000
+        post_cycle_balance - pre_cycle_balance > 749_000_000_000
+            && post_cycle_balance - pre_cycle_balance < 750_000_000_000
     );
 }
