@@ -1,7 +1,7 @@
 [package]
 name = 'canfund'
 description = 'This Rust library provides a simple interface to monitor and add cycles to canisters on the Internet Computer.'
-readme = "https://github.com/dfinity/canfund#readme"
+readme = "../README.md"
 homepage = "https://github.com/dfinity/canfund#readme"
 repository = "https://github.com/dfinity/canfund"
 license = "Apache-2.0"
