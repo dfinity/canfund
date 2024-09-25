@@ -1,14 +1,15 @@
-
 [package]
 name = 'canfund'
 description = 'This Rust library provides a simple interface to monitor and add cycles to canisters on the Internet Computer.'
-readme = "../README.md"
+readme = "https://github.com/dfinity/canfund#readme"
+homepage = "https://github.com/dfinity/canfund#readme"
 repository = "https://github.com/dfinity/canfund"
 license = "Apache-2.0"
 version = "0.2.0"
 include = ['src', 'Cargo.toml']
 authors = ["DFINITY Stiftung"]
 edition = "2021"
+keywords = ["internet-computer", "canbench", "canister", "ic", "cycles"]
 
 [lib]
 path = 'src/lib.rs'
