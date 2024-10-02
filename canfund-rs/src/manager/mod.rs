@@ -5,11 +5,8 @@ use self::{
     options::{FundManagerOptions, FundStrategy},
     record::{CanisterRecord, CyclesBalance},
 };
-use crate::{
-    operations::fetch::{
-        FetchCyclesBalance, FetchCyclesBalanceFromCanisterStatus, FetchOwnCyclesBalance,
-    },
-    utils::calc_estimated_cycles_per_sec,
+use crate::operations::fetch::{
+    FetchCyclesBalance, FetchCyclesBalanceFromCanisterStatus, FetchOwnCyclesBalance,
 };
 use ic_cdk::{
     api::{
@@ -28,6 +25,7 @@ use std::{
     time::Duration,
 };
 
+pub mod history;
 pub mod lock;
 pub mod options;
 pub mod record;
@@ -243,9 +241,10 @@ impl FundManager {
                             funding_canister_balance.saturating_sub(needed_cycles),
                             time(),
                         ),
-                        &maybe_funding_canister_record
+                        maybe_funding_canister_record
                             .as_ref()
-                            .and_then(|record| record.get_previous_cycles().clone()),
+                            .as_ref().map(|record| record.get_average_consumption() as u128)
+                            .unwrap_or(0),
                         &maybe_funding_canister_record
                             .as_ref()
                             .and_then(|record| record.get_strategy().clone())
@@ -386,7 +385,7 @@ impl FundManager {
 
                         let needed_cycles = calc_needed_cycles(
                             &canister_record.get_cycles().clone().unwrap_or_default(),
-                            canister_record.get_previous_cycles(),
+                            canister_record.get_average_consumption() as u128,
                             canister_record
                                 .get_strategy()
                                 .as_ref()
@@ -430,9 +429,26 @@ impl FundManagerCore {
     ///
     /// If the canister is already registered, it will be ignored.
     pub fn register(&mut self, canister_id: CanisterId, opts: RegisterOpts) {
+        let history_window_size = match &opts.strategy {
+            Some(FundStrategy::BelowEstimatedRuntime(estimated_runtime)) => {
+                estimated_runtime.min_runtime_secs() / self.options.interval_secs()
+            }
+            None => match self.options.strategy() {
+                FundStrategy::BelowEstimatedRuntime(estimated_runtime) => {
+                    estimated_runtime.min_runtime_secs() / self.options.interval_secs()
+                }
+                _ => 0,
+            },
+            _ => 0,
+        };
+
         match self.canisters.entry(canister_id) {
             Entry::Vacant(entry) => {
-                entry.insert(CanisterRecord::new(opts.cycles_fetcher, opts.strategy));
+                entry.insert(CanisterRecord::new(
+                    opts.cycles_fetcher,
+                    opts.strategy,
+                    history_window_size as usize,
+                ));
             }
             Entry::Occupied(_) => {
                 // The canister is already registered so ignore.
@@ -459,7 +475,7 @@ impl FundManagerCore {
 /// the used strategy.
 fn calc_needed_cycles(
     current: &CyclesBalance,
-    previous: &Option<CyclesBalance>,
+    estimated_cycles_per_sec: u128,
     strategy: &FundStrategy,
 ) -> u128 {
     match strategy {
@@ -472,11 +488,6 @@ fn calc_needed_cycles(
             0
         }
         FundStrategy::BelowEstimatedRuntime(estimated_runtime) => {
-            let estimated_cycles_per_sec = match previous {
-                Some(previous) => calc_estimated_cycles_per_sec(current, previous),
-                None => 0,
-            };
-
             if estimated_cycles_per_sec == 0 {
                 let is_below_threshold = current.amount <= estimated_runtime.fallback_min_cycles();
 
@@ -532,28 +543,24 @@ mod tests {
 
     #[test]
     fn test_calc_needed_cycles() {
-        let previous = Some(CyclesBalance::new(
-            100,
-            Duration::from_secs(0).as_nanos() as u64,
-        ));
         let current = CyclesBalance::new(50, Duration::from_secs(10).as_nanos() as u64);
 
         let strategy = FundStrategy::Always(1000);
-        assert_eq!(calc_needed_cycles(&current, &previous, &strategy), 1000);
+        assert_eq!(calc_needed_cycles(&current, 0, &strategy), 1000);
 
         let strategy = FundStrategy::BelowThreshold(
             CyclesThreshold::new()
                 .with_min_cycles(50)
                 .with_fund_cycles(100),
         );
-        assert_eq!(calc_needed_cycles(&current, &previous, &strategy), 100);
+        assert_eq!(calc_needed_cycles(&current, 0, &strategy), 100);
 
         let strategy = FundStrategy::BelowThreshold(
             CyclesThreshold::new()
                 .with_min_cycles(49)
                 .with_fund_cycles(100),
         );
-        assert_eq!(calc_needed_cycles(&current, &previous, &strategy), 0);
+        assert_eq!(calc_needed_cycles(&current, 0, &strategy), 0);
 
         let strategy = FundStrategy::BelowEstimatedRuntime(
             EstimatedRuntime::new()
@@ -561,7 +568,7 @@ mod tests {
                 .with_fund_runtime_secs(10)
                 .with_fallback_min_cycles(0),
         );
-        assert_eq!(calc_needed_cycles(&current, &previous, &strategy), 50);
+        assert_eq!(calc_needed_cycles(&current, 5, &strategy), 50);
 
         let strategy = FundStrategy::BelowEstimatedRuntime(
             EstimatedRuntime::new()
@@ -570,12 +577,11 @@ mod tests {
                 .with_max_runtime_cycles_fund(30)
                 .with_fallback_min_cycles(0),
         );
-        assert_eq!(calc_needed_cycles(&current, &previous, &strategy), 30);
+        assert_eq!(calc_needed_cycles(&current, 5, &strategy), 30);
     }
 
     #[test]
     fn test_calc_needed_cycles_zero_previous_cycles() {
-        let previous = None;
         let current = CyclesBalance::new(50, Duration::from_secs(10).as_nanos() as u64);
 
         let strategy = FundStrategy::BelowEstimatedRuntime(
@@ -585,7 +591,7 @@ mod tests {
                 .with_fallback_min_cycles(50)
                 .with_fallback_fund_cycles(100),
         );
-        assert_eq!(calc_needed_cycles(&current, &previous, &strategy), 100);
+        assert_eq!(calc_needed_cycles(&current, 0, &strategy), 100);
 
         let strategy = FundStrategy::BelowEstimatedRuntime(
             EstimatedRuntime::new()
@@ -594,12 +600,11 @@ mod tests {
                 .with_fallback_min_cycles(49)
                 .with_fallback_fund_cycles(100),
         );
-        assert_eq!(calc_needed_cycles(&current, &previous, &strategy), 0);
+        assert_eq!(calc_needed_cycles(&current, 0, &strategy), 0);
     }
 
     #[test]
     fn test_calc_needed_cycles_zero_current_amount() {
-        let previous = None;
         let current = CyclesBalance::new(0, Duration::from_secs(10).as_nanos() as u64);
 
         let strategy = FundStrategy::BelowEstimatedRuntime(
@@ -609,7 +614,7 @@ mod tests {
                 .with_fallback_min_cycles(50)
                 .with_fallback_fund_cycles(100),
         );
-        assert_eq!(calc_needed_cycles(&current, &previous, &strategy), 100);
+        assert_eq!(calc_needed_cycles(&current, 0, &strategy), 100);
 
         let strategy = FundStrategy::BelowThreshold(
             CyclesThreshold::new()
@@ -617,6 +622,6 @@ mod tests {
                 .with_fund_cycles(100),
         );
 
-        assert_eq!(calc_needed_cycles(&current, &previous, &strategy), 100);
+        assert_eq!(calc_needed_cycles(&current, 0, &strategy), 100);
     }
 }
