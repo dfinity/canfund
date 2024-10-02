@@ -76,7 +76,7 @@ lazy_static! {
         let mut packages = Vec::new();
         let examples_path = WORKSPACE_ROOT.join("examples");
 
-        for entry in fs::read_dir(&examples_path).expect("Failed to read serializers directory") {
+        for entry in fs::read_dir(examples_path).expect("Failed to read serializers directory") {
             let entry = entry.expect("Failed to read entry");
             let path = entry.path();
 
@@ -230,8 +230,7 @@ pub fn download_pocket_ic() {
 
     let uncompressed_path = output_path.with_extension("");
 
-    fs::rename(&uncompressed_path, OUT_DIR.join(POCKET_IC_BIN_NAME))
-        .expect("Failed to rename file");
+    fs::rename(uncompressed_path, OUT_DIR.join(POCKET_IC_BIN_NAME)).expect("Failed to rename file");
     fs::set_permissions(
         OUT_DIR.join(POCKET_IC_BIN_NAME),
         fs::Permissions::from_mode(0o755),
