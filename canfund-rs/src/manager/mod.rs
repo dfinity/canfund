@@ -243,7 +243,8 @@ impl FundManager {
                         ),
                         maybe_funding_canister_record
                             .as_ref()
-                            .as_ref().map(|record| record.get_average_consumption() as u128)
+                            .as_ref()
+                            .map(|record| record.get_average_consumption() as u128)
                             .unwrap_or(0),
                         &maybe_funding_canister_record
                             .as_ref()
