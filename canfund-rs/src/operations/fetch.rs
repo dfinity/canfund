@@ -30,7 +30,16 @@ pub struct FetchCyclesBalanceFromCanisterStatus;
 impl FetchCyclesBalance for FetchCyclesBalanceFromCanisterStatus {
     async fn fetch_cycles_balance(&self, canister_id: CanisterId) -> Result<u128, Error> {
         match canister_status(CanisterIdRecord { canister_id }).await {
-            Ok((CanisterStatusResponse { cycles, .. },)) => cycles_nat_to_u128(cycles),
+            Ok((CanisterStatusResponse {
+                cycles, settings, ..
+            },)) => {
+                // We want to consider cycle balance relative to the freezing threshold.
+                cycles_nat_to_u128(cycles).map(|cycles| {
+                    cycles.saturating_sub(
+                        cycles_nat_to_u128(settings.freezing_threshold).unwrap_or(0),
+                    )
+                })
+            }
             Err((RejectionCode::CanisterError, err_msg)) => {
                 // If the canister run out of cycles, we return zero cycles since the canister is frozen.
                 //
