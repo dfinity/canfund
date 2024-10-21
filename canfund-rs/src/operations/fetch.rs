@@ -31,13 +31,17 @@ impl FetchCyclesBalance for FetchCyclesBalanceFromCanisterStatus {
     async fn fetch_cycles_balance(&self, canister_id: CanisterId) -> Result<u128, Error> {
         match canister_status(CanisterIdRecord { canister_id }).await {
             Ok((CanisterStatusResponse {
-                cycles, settings, ..
+                cycles,
+                settings,
+                idle_cycles_burned_per_day,
+                ..
             },)) => {
-                // We want to consider cycle balance relative to the freezing threshold.
+                // We want to consider cycle balance relative to the freezing threshold balance.
                 cycles_nat_to_u128(cycles).map(|cycles| {
-                    cycles.saturating_sub(
+                    cycles.saturating_sub(calc_freezing_balance(
                         cycles_nat_to_u128(settings.freezing_threshold).unwrap_or(0),
-                    )
+                        cycles_nat_to_u128(idle_cycles_burned_per_day).unwrap_or(0),
+                    ))
                 })
             }
             Err((RejectionCode::CanisterError, err_msg)) => {
@@ -188,6 +192,11 @@ fn extract_cycles_from_http_response_body(body: &str, metric_name: &str) -> Resu
         })?;
 
     cycles_str_to_u128(cycles.as_str())
+}
+
+fn calc_freezing_balance(freezing_threshold: u128, idle_cycles_burned_per_day: u128) -> u128 {
+    let idle_cycles_burned_per_second = idle_cycles_burned_per_day / 86_400;
+    freezing_threshold * idle_cycles_burned_per_second
 }
 
 #[cfg(test)]
