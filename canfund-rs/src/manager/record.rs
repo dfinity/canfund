@@ -39,6 +39,7 @@ impl CanisterRecord {
     pub fn set_cycles(&mut self, cycles: CyclesBalance) {
         if let Some(previous_cycles) = self.cycles.as_ref() {
             self.previous_cycles = Some(previous_cycles.clone());
+            // Timestamp difference is in nanoseconds, so we need to multiply by 1_000_000_000 to get cycles per second.
             self.consumtion_history.add_sample(
                 previous_cycles.amount.saturating_sub(cycles.amount) as u64 * 1_000_000_000
                     / cycles.timestamp.saturating_sub(previous_cycles.timestamp),
