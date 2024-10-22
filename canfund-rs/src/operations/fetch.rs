@@ -195,7 +195,12 @@ fn extract_cycles_from_http_response_body(body: &str, metric_name: &str) -> Resu
 }
 
 fn calc_freezing_balance(freezing_threshold: u128, idle_cycles_burned_per_day: u128) -> u128 {
-    (idle_cycles_burned_per_day as f64 * freezing_threshold as f64 / 86_400.0) as u128
+    // u128 should safely handle the multiplication without overflow and provides enough precision for the division result.
+    // e.g. 
+    //  freezing threshold for 100 years ~ 3 * 10^9
+    //  idle cycles burned per day with 1 TB of storage  = 844 * 10^9
+    //  u128 limit ~ 3 * 10^38
+    idle_cycles_burned_per_day * freezing_threshold / 86_400
 }
 
 #[cfg(test)]
