@@ -278,6 +278,7 @@ mod tests {
     #[test]
     fn test_calc_needed_cycles() {
         assert_eq!(calc_freezing_balance(24 * 60 * 60, 1), 1);
+        assert_eq!(calc_freezing_balance(12 * 60 * 60, 100), 50);
         assert_eq!(calc_freezing_balance(10 * 24 * 60 * 60, 50_000), 500_000);
         assert_eq!(calc_freezing_balance(30 * 24 * 60 * 60, 123456), 3_703_680);
     }
