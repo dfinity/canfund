@@ -68,7 +68,7 @@ To use `canfund`, configure it with rules for managing cycles for your canisters
 
 ### Canister Registration
 
-Each canister that you want to fund using `canfund` must be registered. During registration, you must specify the method by which the canister's cycle balance will be fetched. `canfund` supports three different balance-fetching methods:
+Each canister that you want to fund using `canfund` must be registered. During registration, you must specify the method by which the canister's cycle balance will be fetched. `canfund` supports two different balance-fetching methods:
 
 1. **FetchCyclesBalanceFromCanisterStatus**: Fetches the canister's cycle balance by calling the `canister_status` method on the management canister. This method is only suitable if the caller has permission to invoke `canister_status`, which is typically restricted to the controllers of the target canister.
 
@@ -77,11 +77,6 @@ Each canister that you want to fund using `canfund` must be registered. During r
    ```
    This is currently the only method that subtracts the _freezing_threshold_ of the canister. The runtime and threshold funding strategies ([below](#funding-strategies)) are thus calculated from the point when a canister gets frozen.
 
-2. **FetchOwnCyclesBalance**: Fetches the cycle balance using the `ic_cdk::api::canister_balance` method. This method is only suitable for checking the balance of the current canister.
-
-   ```rust
-   let fetcher = FetchCyclesBalanceFromCanisterStatus
-   ```
 
 3. **FetchCyclesBalanceFromPrometheusMetrics**: Fetches the cycle balance by leveraging Prometheus metrics exposed by the canister through an HTTP endpoint.
 
@@ -214,7 +209,7 @@ fn initialize() {
         ),
     );
 
-    // Funding canister is automatically registered with FetchOwnCyclesBalance strategy
+    // Funding canister is automatically registered
 
     fund_manager.start();
 }
