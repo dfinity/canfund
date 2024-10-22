@@ -75,6 +75,7 @@ Each canister that you want to fund using `canfund` must be registered. During r
    ```rust
    let fetcher = FetchCyclesBalanceFromCanisterStatus;
    ```
+   This is currently the only method that subtracts the _freezing_threshold_ of the canister. The runtime and threshold funding strategies ([below](#funding-strategies)) are thus calculated from the point when a canister gets frozen.
 
 2. **FetchOwnCyclesBalance**: Fetches the cycle balance using the `ic_cdk::api::canister_balance` method. This method is only suitable for checking the balance of the current canister.
 

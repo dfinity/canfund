@@ -30,7 +30,20 @@ pub struct FetchCyclesBalanceFromCanisterStatus;
 impl FetchCyclesBalance for FetchCyclesBalanceFromCanisterStatus {
     async fn fetch_cycles_balance(&self, canister_id: CanisterId) -> Result<u128, Error> {
         match canister_status(CanisterIdRecord { canister_id }).await {
-            Ok((CanisterStatusResponse { cycles, .. },)) => cycles_nat_to_u128(cycles),
+            Ok((CanisterStatusResponse {
+                cycles,
+                settings,
+                idle_cycles_burned_per_day,
+                ..
+            },)) => {
+                // We want to consider cycle balance relative to the freezing threshold balance.
+                cycles_nat_to_u128(cycles).map(|cycles| {
+                    cycles.saturating_sub(calc_freezing_balance(
+                        cycles_nat_to_u128(settings.freezing_threshold).unwrap_or(0),
+                        cycles_nat_to_u128(idle_cycles_burned_per_day).unwrap_or(0),
+                    ))
+                })
+            }
             Err((RejectionCode::CanisterError, err_msg)) => {
                 // If the canister run out of cycles, we return zero cycles since the canister is frozen.
                 //
@@ -181,6 +194,15 @@ fn extract_cycles_from_http_response_body(body: &str, metric_name: &str) -> Resu
     cycles_str_to_u128(cycles.as_str())
 }
 
+fn calc_freezing_balance(freezing_threshold: u128, idle_cycles_burned_per_day: u128) -> u128 {
+    // u128 should safely handle the multiplication without overflow and provides enough precision for the division result.
+    // e.g. 
+    //  freezing threshold for 100 years ~ 3 * 10^9
+    //  idle cycles burned per day with 1 TB of storage  = 844 * 10^9
+    //  u128 limit ~ 3 * 10^38
+    idle_cycles_burned_per_day * freezing_threshold / 86_400
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -256,5 +278,13 @@ mod tests {
                 cycles: "invalid".to_string()
             }
         );
+    }
+
+    #[test]
+    fn test_calc_needed_cycles() {
+        assert_eq!(calc_freezing_balance(24 * 60 * 60, 1), 1);
+        assert_eq!(calc_freezing_balance(12 * 60 * 60, 100), 50);
+        assert_eq!(calc_freezing_balance(10 * 24 * 60 * 60, 50_000), 500_000);
+        assert_eq!(calc_freezing_balance(30 * 24 * 60 * 60, 123456), 3_703_680);
     }
 }
