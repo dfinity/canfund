@@ -195,8 +195,7 @@ fn extract_cycles_from_http_response_body(body: &str, metric_name: &str) -> Resu
 }
 
 fn calc_freezing_balance(freezing_threshold: u128, idle_cycles_burned_per_day: u128) -> u128 {
-    let idle_cycles_burned_per_second = idle_cycles_burned_per_day / 86_400;
-    freezing_threshold * idle_cycles_burned_per_second
+    (idle_cycles_burned_per_day as f64 * freezing_threshold as f64 / 86_400.0) as u128
 }
 
 #[cfg(test)]
@@ -274,5 +273,12 @@ mod tests {
                 cycles: "invalid".to_string()
             }
         );
+    }
+
+    #[test]
+    fn test_calc_needed_cycles() {
+        assert_eq!(calc_freezing_balance(24 * 60 * 60, 1), 1);
+        assert_eq!(calc_freezing_balance(10 * 24 * 60 * 60, 50_000), 500_000);
+        assert_eq!(calc_freezing_balance(30 * 24 * 60 * 60, 123456), 3_703_680);
     }
 }
