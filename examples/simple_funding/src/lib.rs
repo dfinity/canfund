@@ -54,7 +54,7 @@ pub fn start_canister_cycles_monitoring(config: FundingConfig) {
             fund_manager.register(
                 canister_id,
                 RegisterOpts::new()
-                    .with_cycles_fetcher(Arc::new(FetchCyclesBalanceFromCanisterStatus))
+                    .with_cycles_fetcher(Arc::new(FetchCyclesBalanceFromCanisterStatus::new()))
                     .with_strategy(FundStrategy::BelowThreshold(
                         CyclesThreshold::new()
                             .with_min_cycles(125_000_000_000)

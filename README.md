@@ -70,12 +70,17 @@ To use `canfund`, configure it with rules for managing cycles for your canisters
 
 Each canister that you want to fund using `canfund` must be registered. During registration, you must specify the method by which the canister's cycle balance will be fetched. `canfund` supports two different balance-fetching methods:
 
-1. **FetchCyclesBalanceFromCanisterStatus**: Fetches the canister's cycle balance by calling the `canister_status` method on the management canister. This method is only suitable if the caller has permission to invoke `canister_status`, which is typically restricted to the controllers of the target canister.
+1. **FetchCyclesBalanceFromCanisterStatus**: Fetches the canister's cycle balance by calling the `canister_status` method on the management or a proxy (e.g. [blackhole](https://github.com/ninegua/ic-blackhole)) canister. This method is only suitable if the funding canister or the proxy has permission to invoke `canister_status`, which is typically restricted to the controllers of the target canister.
 
    ```rust
-   let fetcher = FetchCyclesBalanceFromCanisterStatus;
+   let fetcher = FetchCyclesBalanceFromCanisterStatus::new();
+   
+   // Or alternatively, using the blackhole canister
+   let fetcher = FetchCyclesBalanceFromCanisterStatus::new()
+           .with_proxy(Principal::from_text("e3mmv-5qaaa-aaaah-aadma-cai").unwrap()));
+   );
    ```
-   This is currently the only method that subtracts the _freezing_threshold_ of the canister. The runtime and threshold funding strategies ([below](#funding-strategies)) are thus calculated from the point when a canister gets frozen.
+   **Note:** This is currently the only method that counts with the _freezing_threshold_ of the funded canister. Thus, the runtime and threshold funding strategies (explained below) are calculated relative to the point when a canister gets frozen.
 
 
 3. **FetchCyclesBalanceFromPrometheusMetrics**: Fetches the cycle balance by leveraging Prometheus metrics exposed by the canister through an HTTP endpoint.
@@ -205,7 +210,7 @@ fn initialize() {
     fund_manager.register(
         Princpial::from_text("funded_canister_id"),
         RegisterOpts::new().with_cycles_fetcher(
-            Arc::new(FetchCyclesBalanceFromCanisterStatus)
+            Arc::new(FetchCyclesBalanceFromCanisterStatus::new())
         ),
     );
 
