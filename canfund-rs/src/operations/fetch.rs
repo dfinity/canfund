@@ -24,17 +24,25 @@ pub trait FetchCyclesBalance: Sync + Send {
 /// on the management canister, which is restricted to controllers of the target canister.
 #[derive(Clone)]
 pub struct FetchCyclesBalanceFromCanisterStatus {
-    proxy: Option<CanisterId>,
+    canister: Principal,
+    method: String,
 }
 
 impl FetchCyclesBalanceFromCanisterStatus {
-    /// Creates a new fetcher with the specified proxy canister id.
     pub fn new() -> Self {
-        Self { proxy: None }
+        Self {
+            canister: Principal::management_canister(),
+            method: "canister_status".to_string(),
+        }
     }
 
     pub fn with_proxy(&mut self, proxy: Principal) -> &mut Self {
-        self.proxy = Some(proxy);
+        self.canister = proxy;
+        self
+    }
+
+    pub fn with_method(&mut self, method: String) -> &mut Self {
+        self.method = method;
         self
     }
 }
@@ -48,18 +56,11 @@ impl Default for FetchCyclesBalanceFromCanisterStatus {
 #[async_trait::async_trait]
 impl FetchCyclesBalance for FetchCyclesBalanceFromCanisterStatus {
     async fn fetch_cycles_balance(&self, canister_id: CanisterId) -> Result<u128, Error> {
-        let response = match self.proxy {
-            Some(proxy) => call::<(CanisterIdRecord,), (CanisterStatusResponse,)>(
-                proxy,
-                "canister_status",
-                (CanisterIdRecord { canister_id },),
-            ),
-            None => call(
-                Principal::management_canister(),
-                "canister_status",
-                (CanisterIdRecord { canister_id },),
-            ),
-        };
+        let response = call::<(CanisterIdRecord,), (CanisterStatusResponse,)>(
+            self.canister,
+            &self.method,
+            (CanisterIdRecord { canister_id },),
+        );
 
         match response.await {
             Ok((CanisterStatusResponse {
