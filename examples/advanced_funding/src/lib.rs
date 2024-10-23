@@ -81,10 +81,9 @@ pub fn start_canister_cycles_monitoring(config: FundingConfig) {
                     .with_cycles_fetcher(Arc::new(FetchCyclesBalanceFromCanisterStatus)),
             );
         }
-
-        // By default, the fund manager registers its canister with the FetchOwnCyclesBalance operation
-        // We are able to override it with FetchCyclesBalanceFromCanisterStatus because even canisters that
-        // are not their own controller can call the canister_status endpoint
+        
+        // The funding canister itself is also registered for monitoring by default. We can override
+        // the strategy by re-registering it.
         fund_manager.unregister(id());
         fund_manager.register(
             id(),

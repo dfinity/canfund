@@ -6,7 +6,7 @@ use self::{
     record::{CanisterRecord, CyclesBalance},
 };
 use crate::operations::fetch::{
-    FetchCyclesBalance, FetchCyclesBalanceFromCanisterStatus, FetchOwnCyclesBalance,
+    FetchCyclesBalance, FetchCyclesBalanceFromCanisterStatus,
 };
 use ic_cdk::{
     api::{
@@ -39,7 +39,7 @@ pub struct FundManagerCore {
 }
 
 /// RegisterOpts holds the options for registering a canister to be monitored by the fund manager.
-/// By default it uses the `FetchCyclesBalanceFromCanisterStatus` to fetch the cycles balance.
+/// By default, it uses the `FetchCyclesBalanceFromCanisterStatus` to fetch the cycles balance.
 /// The fund strategy is set to `None` by default, meaning that the global strategy will be applied.
 pub struct RegisterOpts {
     pub cycles_fetcher: Arc<dyn FetchCyclesBalance>,
@@ -96,7 +96,7 @@ impl FundManager {
 
         manager.register(
             id(),
-            RegisterOpts::new().with_cycles_fetcher(Arc::new(FetchOwnCyclesBalance {})),
+            RegisterOpts::new(),
         );
 
         manager
