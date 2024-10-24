@@ -5,9 +5,7 @@ use self::{
     options::{FundManagerOptions, FundStrategy},
     record::{CanisterRecord, CyclesBalance},
 };
-use crate::operations::fetch::{
-    FetchCyclesBalance, FetchCyclesBalanceFromCanisterStatus,
-};
+use crate::operations::fetch::{FetchCyclesBalance, FetchCyclesBalanceFromCanisterStatus};
 use ic_cdk::{
     api::{
         management_canister::main::{deposit_cycles, CanisterId, CanisterIdRecord},
@@ -50,7 +48,7 @@ impl RegisterOpts {
     /// Creates a new register options with the default cycles fetcher.
     pub fn new() -> Self {
         Self {
-            cycles_fetcher: Arc::new(FetchCyclesBalanceFromCanisterStatus {}),
+            cycles_fetcher: Arc::new(FetchCyclesBalanceFromCanisterStatus::new()),
             strategy: None,
         }
     }
@@ -94,10 +92,7 @@ impl FundManager {
             tracker: None,
         };
 
-        manager.register(
-            id(),
-            RegisterOpts::new(),
-        );
+        manager.register(id(), RegisterOpts::new());
 
         manager
     }

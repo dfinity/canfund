@@ -78,17 +78,17 @@ pub fn start_canister_cycles_monitoring(config: FundingConfig) {
             fund_manager.register(
                 canister_id,
                 RegisterOpts::new()
-                    .with_cycles_fetcher(Arc::new(FetchCyclesBalanceFromCanisterStatus)),
+                    .with_cycles_fetcher(Arc::new(FetchCyclesBalanceFromCanisterStatus::new())),
             );
         }
-        
+
         // The funding canister itself is also registered for monitoring by default. We can override
         // the strategy by re-registering it.
         fund_manager.unregister(id());
         fund_manager.register(
             id(),
             RegisterOpts::new()
-                .with_cycles_fetcher(Arc::new(FetchCyclesBalanceFromCanisterStatus))
+                .with_cycles_fetcher(Arc::new(FetchCyclesBalanceFromCanisterStatus::new()))
                 .with_strategy(FundStrategy::BelowThreshold(
                     CyclesThreshold::new()
                         .with_min_cycles(125_000_000_000)
