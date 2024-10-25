@@ -3,12 +3,11 @@ use crate::{
     types::{HttpRequest, HttpResponse},
     utils::{cycles_nat_to_u128, cycles_str_to_u128},
 };
+use candid::Principal;
 use ic_cdk::{
     api::{
         call::RejectionCode,
-        management_canister::main::{
-            canister_status, CanisterId, CanisterIdRecord, CanisterStatusResponse,
-        },
+        management_canister::main::{CanisterId, CanisterIdRecord, CanisterStatusResponse},
     },
     call,
 };
@@ -24,12 +23,46 @@ pub trait FetchCyclesBalance: Sync + Send {
 /// This fetcher is only suitable if the caller has the permission to call the `canister_status` method
 /// on the management canister, which is restricted to controllers of the target canister.
 #[derive(Clone)]
-pub struct FetchCyclesBalanceFromCanisterStatus;
+pub struct FetchCyclesBalanceFromCanisterStatus {
+    canister: Principal,
+    method: String,
+}
+
+impl FetchCyclesBalanceFromCanisterStatus {
+    pub fn new() -> Self {
+        Self {
+            canister: Principal::management_canister(),
+            method: "canister_status".to_string(),
+        }
+    }
+
+    pub fn with_proxy(mut self, proxy: Principal) -> Self {
+        self.canister = proxy;
+        self
+    }
+
+    pub fn with_method(mut self, method: String) -> Self {
+        self.method = method;
+        self
+    }
+}
+
+impl Default for FetchCyclesBalanceFromCanisterStatus {
+    fn default() -> Self {
+        FetchCyclesBalanceFromCanisterStatus::new()
+    }
+}
 
 #[async_trait::async_trait]
 impl FetchCyclesBalance for FetchCyclesBalanceFromCanisterStatus {
     async fn fetch_cycles_balance(&self, canister_id: CanisterId) -> Result<u128, Error> {
-        match canister_status(CanisterIdRecord { canister_id }).await {
+        let response = call::<(CanisterIdRecord,), (CanisterStatusResponse,)>(
+            self.canister,
+            &self.method,
+            (CanisterIdRecord { canister_id },),
+        );
+
+        match response.await {
             Ok((CanisterStatusResponse {
                 cycles,
                 settings,
@@ -184,7 +217,7 @@ fn extract_cycles_from_http_response_body(body: &str, metric_name: &str) -> Resu
 
 fn calc_freezing_balance(freezing_threshold: u128, idle_cycles_burned_per_day: u128) -> u128 {
     // u128 should safely handle the multiplication without overflow and provides enough precision for the division result.
-    // e.g. 
+    // e.g.
     //  freezing threshold for 100 years ~ 3 * 10^9
     //  idle cycles burned per day with 1 TB of storage  = 844 * 10^9
     //  u128 limit ~ 3 * 10^38

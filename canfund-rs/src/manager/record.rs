@@ -110,12 +110,12 @@ impl CyclesBalance {
 
 #[cfg(test)]
 mod tests {
-    use crate::operations::fetch::FetchCyclesBalanceFromCanisterStatus;
     use super::*;
+    use crate::operations::fetch::FetchCyclesBalanceFromCanisterStatus;
 
     #[test]
     fn test_canister_record() {
-        let cycles_fetcher = Arc::new(FetchCyclesBalanceFromCanisterStatus);
+        let cycles_fetcher = Arc::new(FetchCyclesBalanceFromCanisterStatus::new());
         let mut canister_record = CanisterRecord::new(cycles_fetcher, None, 0);
 
         let cycles = CyclesBalance::new(100, 100);
@@ -148,7 +148,7 @@ mod tests {
 
     #[test]
     fn test_canister_consumption() {
-        let cycles_fetcher = Arc::new(FetchCyclesBalanceFromCanisterStatus);
+        let cycles_fetcher = Arc::new(FetchCyclesBalanceFromCanisterStatus::new());
         let mut canister_record = CanisterRecord::new(cycles_fetcher, None, 5);
 
         canister_record.set_cycles(CyclesBalance::new(300_000, 1_000_000_000));

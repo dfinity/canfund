@@ -70,12 +70,26 @@ To use `canfund`, configure it with rules for managing cycles for your canisters
 
 Each canister that you want to fund using `canfund` must be registered. During registration, you must specify the method by which the canister's cycle balance will be fetched. `canfund` supports two different balance-fetching methods:
 
-1. **FetchCyclesBalanceFromCanisterStatus**: Fetches the canister's cycle balance by calling the `canister_status` method on the management canister. This method is only suitable if the caller has permission to invoke `canister_status`, which is typically restricted to the controllers of the target canister.
+1. **FetchCyclesBalanceFromCanisterStatus**: Retrieves the cycle balance from the response of an update call to a canister, typically using the `canister_status` method on the management canister. It can also work with responses from other canisters, such as a blackhole, or from self-exposed methods on any canister, as long as the response follows the [CanisterStatusResponse specification](https://docs.rs/ic-cdk/0.15.0/ic_cdk/api/management_canister/main/struct.CanisterStatusResponse.html). 
+
+   This method is only applicable if the funding canister has the required permissions to invoke the target canister’s method, such as being a controller when interacting with the management canister.
 
    ```rust
-   let fetcher = FetchCyclesBalanceFromCanisterStatus;
+   // By default, using the management canister (funding canister is a controller)
+   let fetcher = FetchCyclesBalanceFromCanisterStatus::new();
+   
+   // Using the blackhole canister (Blackhole is a controller)
+   let fetcher = FetchCyclesBalanceFromCanisterStatus::new()
+           .with_proxy(Principal::from_text("e3mmv-5qaaa-aaaah-aadma-cai").unwrap()));
+   );
+   
+   // Using a custom method of a canister (method is public)
+   let fetcher = FetchCyclesBalanceFromCanisterStatus::new()
+           .with_proxy(Principal::from_text("ml52i-qqaaa-aaaar-qaaba-cai").unwrap())
+           .with_method("get_canister_status".to_string());
+   );
    ```
-   This is currently the only method that subtracts the _freezing_threshold_ of the canister. The runtime and threshold funding strategies ([below](#funding-strategies)) are thus calculated from the point when a canister gets frozen.
+   **Note:** This method is currently the only one that accounts for the freezing threshold of the funded canister. As a result, the runtime and threshold-based funding strategies (explained below) are calculated based on when the canister becomes frozen. This behavior does not apply to the Blackhole proxy, as it currently does not return the required _idle_cycles_burned_per_day_ field in its response.
 
 
 3. **FetchCyclesBalanceFromPrometheusMetrics**: Fetches the cycle balance by leveraging Prometheus metrics exposed by the canister through an HTTP endpoint.
@@ -205,7 +219,7 @@ fn initialize() {
     fund_manager.register(
         Princpial::from_text("funded_canister_id"),
         RegisterOpts::new().with_cycles_fetcher(
-            Arc::new(FetchCyclesBalanceFromCanisterStatus)
+            Arc::new(FetchCyclesBalanceFromCanisterStatus::new())
         ),
     );
 
