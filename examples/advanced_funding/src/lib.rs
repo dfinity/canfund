@@ -56,12 +56,11 @@ pub fn start_canister_cycles_monitoring(config: FundingConfig) {
             .with_funding_callback(Rc::new(|records| {
                 // Loop over the hashmap of canister records and print the cycles balance and total of deposited cycles
                 for (canister_id, record) in records.iter() {
-                    let cycles = record.get_cycles().as_ref().map(|c| c.amount).unwrap_or(0);
+                    let cycles = record.get_cycles().as_ref().map_or(0, |c| c.amount);
                     let deposited_cycles = record
                         .get_deposited_cycles()
                         .as_ref()
-                        .map(|c| c.amount)
-                        .unwrap_or(0);
+                        .map_or(0, |c| c.amount);
                     ic_cdk::print(format!(
                         "Canister {} had {} cycles and got {} deposited cycles",
                         canister_id, cycles, deposited_cycles
@@ -132,8 +131,7 @@ fn get_deposited_cycles() -> Vec<GetDepositedCyclesRetItem> {
                 let deposited_cycles = record
                     .get_deposited_cycles()
                     .as_ref()
-                    .map(|c| c.amount)
-                    .unwrap_or(0);
+                    .map_or(0, |c| c.amount);
                 GetDepositedCyclesRetItem {
                     deposited_cycles,
                     canister_id: *canister_id,

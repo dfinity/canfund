@@ -36,12 +36,12 @@ impl FetchCyclesBalanceFromCanisterStatus {
         }
     }
 
-    pub fn with_proxy(&mut self, proxy: Principal) -> &mut Self {
+    pub fn with_proxy(mut self, proxy: Principal) -> Self {
         self.canister = proxy;
         self
     }
 
-    pub fn with_method(&mut self, method: String) -> &mut Self {
+    pub fn with_method(mut self, method: String) -> Self {
         self.method = method;
         self
     }

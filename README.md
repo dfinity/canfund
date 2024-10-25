@@ -70,7 +70,7 @@ To use `canfund`, configure it with rules for managing cycles for your canisters
 
 Each canister that you want to fund using `canfund` must be registered. During registration, you must specify the method by which the canister's cycle balance will be fetched. `canfund` supports two different balance-fetching methods:
 
-1. **FetchCyclesBalanceFromCanisterStatus**: Retrieves the cycle balance from the response of an update call to a canister, typically using the `canister_status` method on the management canister. It can also work with responses from other canisters, such as [Blackhole](https://github.com/ninegua/ic-blackhole), or from self-exposed methods on any canister, as long as the response follows the [CanisterStatusResponse specification](https://docs.rs/ic-cdk/0.15.0/ic_cdk/api/management_canister/main/struct.CanisterStatusResponse.html). 
+1. **FetchCyclesBalanceFromCanisterStatus**: Retrieves the cycle balance from the response of an update call to a canister, typically using the `canister_status` method on the management canister. It can also work with responses from other canisters, such as a blackhole, or from self-exposed methods on any canister, as long as the response follows the [CanisterStatusResponse specification](https://docs.rs/ic-cdk/0.15.0/ic_cdk/api/management_canister/main/struct.CanisterStatusResponse.html). 
 
    This method is only applicable if the funding canister has the required permissions to invoke the target canister’s method, such as being a controller when interacting with the management canister.
 
