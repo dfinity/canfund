@@ -1,3 +1,16 @@
+## 0.3.0 (2024-11-01)
+
+### Feat
+
+- support custom proxy method
+- allow proxy/blackhole for canister status
+- **fetch**: consider freezing threshold in mngmt canister balance fetch
+- add balance check history and improve average consumption calculation
+
+### Refactor
+
+- remove outdated FetchOwnCyclesBalance cycle fetching approach
+
 ## 0.2.0 (2024-09-23)
 
 
