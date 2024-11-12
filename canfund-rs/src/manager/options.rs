@@ -173,8 +173,6 @@ impl Default for FundStrategy {
 pub struct ObtainCyclesOptions {
     /// How to obtain cycles when the funding canister balance gets low.
     pub obtain_cycles: Arc<dyn ObtainCycles>,
-    /// If canfund should use obtain_cycles to top up the canister balance canfund is running on.
-    pub top_up_self: bool,
 }
 
 #[derive(Debug, Clone)]

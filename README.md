@@ -160,7 +160,6 @@ let obtain_cycles_config = ObtainCyclesOptions {
         )),
         from_subaccount: Subaccount::from(DEFAULT_SUBACCOUNT),
     }),
-    top_up_self: true,
 };
 
 funding_options.with_obtain_cycles_options(Some(obtain_cycles_config));
