@@ -223,7 +223,11 @@ fn initialize() {
         ),
     );
 
-    // Funding canister is automatically registered
+    // Note: the funding canister is NOT automatically registered
+    fund_manager.register(
+        id(),
+        RegisterOpts::new(),
+    );
 
     fund_manager.start();
 }
