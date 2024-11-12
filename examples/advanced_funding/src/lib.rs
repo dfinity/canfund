@@ -107,7 +107,6 @@ pub fn get_obtain_cycles_config() -> Option<ObtainCyclesOptions> {
             )),
             from_subaccount: DEFAULT_SUBACCOUNT,
         }),
-        top_up_self: true,
     })
 }
 

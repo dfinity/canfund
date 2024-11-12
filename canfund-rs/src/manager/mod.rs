@@ -253,11 +253,6 @@ impl FundManager {
                         manager.borrow().options().obtain_cycles_options().clone();
 
                     if let Some(obtain_cycles_options) = maybe_obtain_cycles {
-                        if canister_id == id() && !obtain_cycles_options.top_up_self {
-                            // Obtaining cycles solely for topping up the funding canister is disabled.
-                            continue;
-                        }
-
                         ic_cdk::println!(
                             "Topping up {} with {} cycles",
                             canister_id,
