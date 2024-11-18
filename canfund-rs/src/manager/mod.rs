@@ -5,6 +5,7 @@ use self::{
     options::{FundManagerOptions, FundStrategy},
     record::{CanisterRecord, CyclesBalance},
 };
+use crate::manager::options::ObtainCyclesOptions;
 use crate::operations::fetch::{FetchCyclesBalance, FetchCyclesBalanceFromCanisterStatus};
 use ic_cdk::{
     api::{
@@ -39,9 +40,11 @@ pub struct FundManagerCore {
 /// RegisterOpts holds the options for registering a canister to be monitored by the fund manager.
 /// By default, it uses the `FetchCyclesBalanceFromCanisterStatus` to fetch the cycles balance.
 /// The fund strategy is set to `None` by default, meaning that the global strategy will be applied.
+/// The obtain cycles strategy is set to `None` by default, meaning that the global strategy will be applied.
 pub struct RegisterOpts {
     pub cycles_fetcher: Arc<dyn FetchCyclesBalance>,
     pub strategy: Option<FundStrategy>,
+    pub obtain_cycles_config: Option<ObtainCyclesOptions>,
 }
 
 impl RegisterOpts {
@@ -50,6 +53,7 @@ impl RegisterOpts {
         Self {
             cycles_fetcher: Arc::new(FetchCyclesBalanceFromCanisterStatus::new()),
             strategy: None,
+            obtain_cycles_config: None,
         }
     }
 
@@ -62,6 +66,12 @@ impl RegisterOpts {
     /// Sets the funding strategy for the register options.
     pub fn with_strategy(mut self, strategy: FundStrategy) -> Self {
         self.strategy = Some(strategy);
+        self
+    }
+
+    /// Sets the obtain cycles config for the register options.
+    pub fn with_obtain_cycles_config(mut self, obtain_cycles_config: ObtainCyclesOptions) -> Self {
+        self.obtain_cycles_config = Some(obtain_cycles_config);
         self
     }
 }
@@ -253,8 +263,12 @@ impl FundManager {
                 // or it does not have enough cycles to fund another canister,
                 // then need to obtain cycles for the funding canister.
                 if canister_id == id() || funding_canister_needs_cycles {
-                    let maybe_obtain_cycles =
-                        manager.borrow().options().obtain_cycles_options().clone();
+                    let maybe_obtain_cycles = manager
+                        .borrow()
+                        .canisters
+                        .get(&canister_id)
+                        .and_then(|record| record.get_obtain_cycles_config().clone())
+                        .or_else(|| manager.borrow().options.obtain_cycles_options().clone());
 
                     if let Some(obtain_cycles_options) = maybe_obtain_cycles {
                         if canister_id == id() && !obtain_cycles_options.top_up_self {
@@ -442,6 +456,7 @@ impl FundManagerCore {
                 entry.insert(CanisterRecord::new(
                     opts.cycles_fetcher,
                     opts.strategy,
+                    opts.obtain_cycles_config,
                     history_window_size as usize,
                 ));
             }
@@ -489,9 +504,9 @@ fn calc_needed_cycles(
                 // If the current cycles balance is below the threshold, we should fund the canister.
                 if is_below_threshold {
                     return estimated_runtime.fallback_fund_cycles();
-                } else {
-                    return 0;
                 }
+
+                return 0;
             }
 
             // If the current cycles balance is below the min cycles threshold,
@@ -501,7 +516,7 @@ fn calc_needed_cycles(
             }
 
             // Fund the canister with the cycles needed to run for the estimated runtime, but cap it to the
-            // maximum runtime cycles fund to prevent overfunding.
+            // maximum runtime cycles fund to prevent over-funding.
             let fund_with_cycles = cmp::min(
                 estimated_cycles_per_sec
                     .saturating_mul(estimated_runtime.fund_runtime_secs() as u128),
