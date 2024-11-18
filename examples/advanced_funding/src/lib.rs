@@ -81,9 +81,7 @@ pub fn start_canister_cycles_monitoring(config: FundingConfig) {
             );
         }
 
-        // The funding canister itself is also registered for monitoring by default. We can override
-        // the strategy by re-registering it.
-        fund_manager.unregister(id());
+        // The funding canister itself can also be monitored.
         fund_manager.register(
             id(),
             RegisterOpts::new()
@@ -109,7 +107,6 @@ pub fn get_obtain_cycles_config() -> Option<ObtainCyclesOptions> {
             )),
             from_subaccount: DEFAULT_SUBACCOUNT,
         }),
-        top_up_self: true,
     })
 }
 

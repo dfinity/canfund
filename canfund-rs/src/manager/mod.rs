@@ -97,14 +97,10 @@ impl Default for FundManager {
 impl FundManager {
     /// Creates a new fund manager with the specified options.
     pub fn new() -> Self {
-        let mut manager = FundManager {
+        FundManager {
             inner: FundManagerCore::new(),
             tracker: None,
-        };
-
-        manager.register(id(), RegisterOpts::new());
-
-        manager
+        }
     }
 
     /// Configures the fund manager with the specified options.
@@ -195,6 +191,7 @@ impl FundManager {
     }
 
     /// Executes the scheduled monitoring of the canisters and fund them if needed.
+    #[allow(clippy::too_many_lines)]
     async fn execute_scheduled_monitoring(manager: Rc<RefCell<FundManagerCore>>) {
         // Lock the process execution to prevent concurrent executions, it is dropped automatically
         // when it goes out of scope.
@@ -236,7 +233,7 @@ impl FundManager {
                     // Get the current balance.
                     let funding_canister_balance = ic_cdk::api::canister_balance128();
 
-                    // Get the record of the funding canister, if it exists, to access the previsous cycles balance to calculate estimated runtime left.
+                    // Get the record of the funding canister, if it exists, to access the previous cycles balance to calculate estimated runtime left.
                     let maybe_funding_canister_record =
                         manager.borrow().canisters.get(&id()).cloned();
 
@@ -248,8 +245,7 @@ impl FundManager {
                         ),
                         maybe_funding_canister_record
                             .as_ref()
-                            .map(|record| record.get_average_consumption() as u128)
-                            .unwrap_or(0),
+                            .map_or(0, |record| record.get_average_consumption() as u128),
                         &maybe_funding_canister_record
                             .as_ref()
                             .and_then(|record| record.get_strategy().clone())
@@ -271,11 +267,6 @@ impl FundManager {
                         .or_else(|| manager.borrow().options.obtain_cycles_options().clone());
 
                     if let Some(obtain_cycles_options) = maybe_obtain_cycles {
-                        if canister_id == id() && !obtain_cycles_options.top_up_self {
-                            // Obtaining cycles solely for topping up the funding canister is disabled.
-                            continue;
-                        }
-
                         ic_cdk::println!(
                             "Topping up {} with {} cycles",
                             canister_id,
