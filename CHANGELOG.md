@@ -3,7 +3,7 @@
 ### BREAKING CHANGE
 
 - There is no observed use-case to disable minting for topping up the funding canister
-- The funding cunister must be registered explicitly with this update
+- The funding canister must be registered explicitly with this update
 
 ### Feat
 
