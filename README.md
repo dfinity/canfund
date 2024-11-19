@@ -149,7 +149,7 @@ fund_manager.register(
 
 `canfund` can also be configured to obtain cycles from an ICP account balance if your canister requires more cycles than it currently holds. This is achieved by interacting with the ICP Ledger and the Cycles Minting Canister (CMC).
 
-To enable this feature, you must provide the necessary configuration to allow `canfund` to mint cycles:
+To enable this feature, you must provide the necessary configuration to allow `canfund` to mint cycles. This configuration can also be set for each registered canister to override the global configuration.
 
 ```rust
 let obtain_cycles_config = ObtainCyclesOptions {

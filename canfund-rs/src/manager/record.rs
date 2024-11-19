@@ -1,6 +1,6 @@
-use std::sync::Arc;
-
+use crate::manager::options::ObtainCyclesOptions;
 use crate::operations::fetch::FetchCyclesBalance;
+use std::sync::Arc;
 
 use super::{history::ConsumptionHistory, options::FundStrategy};
 
@@ -11,28 +11,32 @@ pub struct CanisterRecord {
     /// The canister cycles balance record when it was last funded.
     previous_cycles: Option<CyclesBalance>,
     /// The cycles consumption history of the canister.
-    consumtion_history: ConsumptionHistory,
+    consumption_history: ConsumptionHistory,
     /// The cumulative total of cycles deposited to the canister.
     deposited_cycles: Option<CyclesBalance>,
     /// The method to fetch the canister cycles balance.
     cycles_fetcher: Arc<dyn FetchCyclesBalance>,
     /// Optional fund strategy for the canister which overrides the global strategy.
     strategy: Option<FundStrategy>,
+    /// Optional minting strategy for the canister which overrides the global strategy.
+    obtain_cycles_options: Option<ObtainCyclesOptions>,
 }
 
 impl CanisterRecord {
     pub fn new(
         cycles_fetcher: Arc<dyn FetchCyclesBalance>,
         strategy: Option<FundStrategy>,
+        obtain_cycles_options: Option<ObtainCyclesOptions>,
         history_window_size: usize,
     ) -> Self {
         Self {
             cycles: None,
-            consumtion_history: ConsumptionHistory::new(history_window_size),
+            consumption_history: ConsumptionHistory::new(history_window_size),
             previous_cycles: None,
             deposited_cycles: None,
             cycles_fetcher,
             strategy,
+            obtain_cycles_options,
         }
     }
 
@@ -40,7 +44,7 @@ impl CanisterRecord {
         if let Some(previous_cycles) = self.cycles.as_ref() {
             self.previous_cycles = Some(previous_cycles.clone());
             // Timestamp difference is in nanoseconds, so we need to multiply by 1_000_000_000 to get cycles per second.
-            self.consumtion_history.add_sample(
+            self.consumption_history.add_sample(
                 previous_cycles.amount.saturating_sub(cycles.amount) as u64 * 1_000_000_000
                     / cycles.timestamp.saturating_sub(previous_cycles.timestamp),
             );
@@ -86,9 +90,13 @@ impl CanisterRecord {
         &self.strategy
     }
 
+    pub fn get_obtain_cycles_options(&self) -> &Option<ObtainCyclesOptions> {
+        &self.obtain_cycles_options
+    }
+
     /// Returns the average consumption of the canister in cycles per second.
     pub fn get_average_consumption(&self) -> u64 {
-        self.consumtion_history.average()
+        self.consumption_history.average()
     }
 }
 
@@ -116,7 +124,7 @@ mod tests {
     #[test]
     fn test_canister_record() {
         let cycles_fetcher = Arc::new(FetchCyclesBalanceFromCanisterStatus::new());
-        let mut canister_record = CanisterRecord::new(cycles_fetcher, None, 0);
+        let mut canister_record = CanisterRecord::new(cycles_fetcher, None, None, 0);
 
         let cycles = CyclesBalance::new(100, 100);
         canister_record.set_cycles(cycles.clone());
@@ -149,7 +157,7 @@ mod tests {
     #[test]
     fn test_canister_consumption() {
         let cycles_fetcher = Arc::new(FetchCyclesBalanceFromCanisterStatus::new());
-        let mut canister_record = CanisterRecord::new(cycles_fetcher, None, 5);
+        let mut canister_record = CanisterRecord::new(cycles_fetcher, None, None, 5);
 
         canister_record.set_cycles(CyclesBalance::new(300_000, 1_000_000_000));
         canister_record.set_cycles(CyclesBalance::new(200_000, 2_000_000_000));
