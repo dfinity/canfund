@@ -19,14 +19,14 @@ pub struct CanisterRecord {
     /// Optional fund strategy for the canister which overrides the global strategy.
     strategy: Option<FundStrategy>,
     /// Optional minting strategy for the canister which overrides the global strategy.
-    obtain_cycles_config: Option<ObtainCyclesOptions>,
+    obtain_cycles_options: Option<ObtainCyclesOptions>,
 }
 
 impl CanisterRecord {
     pub fn new(
         cycles_fetcher: Arc<dyn FetchCyclesBalance>,
         strategy: Option<FundStrategy>,
-        obtain_cycles_config: Option<ObtainCyclesOptions>,
+        obtain_cycles_options: Option<ObtainCyclesOptions>,
         history_window_size: usize,
     ) -> Self {
         Self {
@@ -36,7 +36,7 @@ impl CanisterRecord {
             deposited_cycles: None,
             cycles_fetcher,
             strategy,
-            obtain_cycles_config,
+            obtain_cycles_options,
         }
     }
 
@@ -90,8 +90,8 @@ impl CanisterRecord {
         &self.strategy
     }
 
-    pub fn get_obtain_cycles_config(&self) -> &Option<ObtainCyclesOptions> {
-        &self.obtain_cycles_config
+    pub fn get_obtain_cycles_options(&self) -> &Option<ObtainCyclesOptions> {
+        &self.obtain_cycles_options
     }
 
     /// Returns the average consumption of the canister in cycles per second.

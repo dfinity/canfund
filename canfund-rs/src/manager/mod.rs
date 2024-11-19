@@ -44,7 +44,7 @@ pub struct FundManagerCore {
 pub struct RegisterOpts {
     pub cycles_fetcher: Arc<dyn FetchCyclesBalance>,
     pub strategy: Option<FundStrategy>,
-    pub obtain_cycles_config: Option<ObtainCyclesOptions>,
+    pub obtain_cycles_options: Option<ObtainCyclesOptions>,
 }
 
 impl RegisterOpts {
@@ -53,7 +53,7 @@ impl RegisterOpts {
         Self {
             cycles_fetcher: Arc::new(FetchCyclesBalanceFromCanisterStatus::new()),
             strategy: None,
-            obtain_cycles_config: None,
+            obtain_cycles_options: None,
         }
     }
 
@@ -70,8 +70,11 @@ impl RegisterOpts {
     }
 
     /// Sets the obtain cycles config for the register options.
-    pub fn with_obtain_cycles_config(mut self, obtain_cycles_config: ObtainCyclesOptions) -> Self {
-        self.obtain_cycles_config = Some(obtain_cycles_config);
+    pub fn with_obtain_cycles_options(
+        mut self,
+        obtain_cycles_options: ObtainCyclesOptions,
+    ) -> Self {
+        self.obtain_cycles_options = Some(obtain_cycles_options);
         self
     }
 }
@@ -263,7 +266,7 @@ impl FundManager {
                         .borrow()
                         .canisters
                         .get(&canister_id)
-                        .and_then(|record| record.get_obtain_cycles_config().clone())
+                        .and_then(|record| record.get_obtain_cycles_options().clone())
                         .or_else(|| manager.borrow().options.obtain_cycles_options().clone());
 
                     if let Some(obtain_cycles_options) = maybe_obtain_cycles {
@@ -447,7 +450,7 @@ impl FundManagerCore {
                 entry.insert(CanisterRecord::new(
                     opts.cycles_fetcher,
                     opts.strategy,
-                    opts.obtain_cycles_config,
+                    opts.obtain_cycles_options,
                     history_window_size as usize,
                 ));
             }

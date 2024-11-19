@@ -77,7 +77,7 @@ pub fn start_canister_cycles_monitoring(config: FundingConfig) {
                 canister_id,
                 RegisterOpts::new()
                     .with_cycles_fetcher(Arc::new(FetchCyclesBalanceFromCanisterStatus::new()))
-                    .with_obtain_cycles_config(get_obtain_cycles_config().unwrap()),
+                    .with_obtain_cycles_options(get_obtain_cycles_config().unwrap()),
             );
         }
 
