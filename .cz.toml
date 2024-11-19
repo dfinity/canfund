@@ -4,7 +4,7 @@ tag_format = "$version"
 version_scheme = "semver2"
 update_changelog_on_bump = true
 major_version_zero = true
-version = "0.3.0"
+version = "0.4.0"
 version_files = [
   "canfund-rs/Cargo.toml:version",
 ]

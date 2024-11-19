@@ -1,3 +1,19 @@
+## 0.4.0 (2024-11-19)
+
+### BREAKING CHANGE
+
+- There is no observed use-case to disable minting for topping up the funding canister
+- The funding cunister must be registered explicitly with this update
+
+### Feat
+
+- allow minting strategy per canister
+
+### Refactor
+
+- remove self top-up configuration for funding canister
+- **manager**: remove implicit funding canister registration
+
 ## 0.3.0 (2024-11-01)
 
 ### Feat
