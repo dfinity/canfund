@@ -105,7 +105,7 @@ To register a canister with selected `fetcher`:
 
 ```rust
 fund_manager.register(
-    Princpial::from_text("funded_canister_id"),
+    Principal::from_text("funded_canister_id").unwrap(),
     RegisterOpts::new().with_cycles_fetcher(
         Arc::new(fetcher)
     ),
@@ -216,7 +216,7 @@ fn initialize() {
     fund_manager.with_options(funding_config);
     
     fund_manager.register(
-        Princpial::from_text("funded_canister_id"),
+        Principal::from_text("funded_canister_id").unwrap(),
         RegisterOpts::new().with_cycles_fetcher(
             Arc::new(FetchCyclesBalanceFromCanisterStatus::new())
         ),
