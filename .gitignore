@@ -65,7 +65,7 @@ coverage
 .dfx
 pocket-ic
 ic-wasm
-wasms/*.wasm.gz
+**/wasms/*.wasm.gz
 /src
 .canbench
 .canbench_output
