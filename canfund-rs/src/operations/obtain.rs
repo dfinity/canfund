@@ -4,6 +4,7 @@ use async_trait::async_trait;
 use candid::Principal;
 use ic_ledger_types::{Memo, Subaccount, Tokens, TransferArgs};
 
+use crate::api::cmc::GetIcpXdrResult;
 use crate::api::{
     cmc::{CyclesMintingCanister, NotifyError, NotifyTopUpResult},
     ledger::LedgerCanister,
@@ -42,8 +43,26 @@ impl ObtainCycles for MintCycles {
         target_canister_id: candid::Principal,
     ) -> Result<u128, ObtainCycleError> {
         // get ICP/XDR rate from CMC
-        let price = self
-            .cmc
+        let price = self.get_icp_xdr_price().await?;
+
+        // convert cycle amount to ICP amount
+        let icp_amount =
+            self.calculate_icp_amount(amount, price.data.xdr_permyriad_per_icp as u128);
+
+        // transfer ICP to ledger account of CMC
+        let block_index = self
+            .transfer_icp_to_cmc(icp_amount, target_canister_id)
+            .await?;
+
+        // notify the CMC canister about the transfer so it can mint cycles
+        // retry if the transaction is still processing
+        self.notify_cmc_top_up(block_index, target_canister_id).await
+    }
+}
+
+impl MintCycles {
+    async fn get_icp_xdr_price(&self) -> Result<GetIcpXdrResult, ObtainCycleError> {
+        self.cmc
             .get_icp_xdr()
             .await
             .map_err(|err| ObtainCycleError {
@@ -51,23 +70,26 @@ impl ObtainCycles for MintCycles {
                     "Error getting ICP/XDR price from CMC: code={:?}, message={}",
                     err.0, err.1
                 ),
-
-                // at this point the process can be safely retried
                 can_retry: true,
-            })?;
+            })
+    }
 
-        // convert cycle amount to ICP amount
+    fn calculate_icp_amount(&self, amount: u128, price: u128) -> u128 {
         let cycles_per_xdr: u128 = 1_000_000_000_000; // 1 trillion cycles per XDR
-        let cycles_per_icp: u128 =
-            price.data.xdr_permyriad_per_icp as u128 * cycles_per_xdr / 10_000u128;
-        let icp_to_mint_cycles_from_e8s = amount * 100_000_000u128 / cycles_per_icp;
+        let cycles_per_icp: u128 = price * cycles_per_xdr / 10_000u128;
+        amount * 100_000_000u128 / cycles_per_icp
+    }
 
-        // transfer ICP to ledger account of CMC
+    async fn transfer_icp_to_cmc(
+        &self,
+        icp_amount: u128,
+        target_canister_id: Principal,
+    ) -> Result<u64, ObtainCycleError> {
         let call_result = self
             .ledger
             .transfer(TransferArgs {
-                memo: Memo(0x50555054),
-                amount: Tokens::from_e8s(icp_to_mint_cycles_from_e8s as u64),
+                memo: Memo(0x5055_5054),
+                amount: Tokens::from_e8s(icp_amount as u64),
                 fee: Tokens::from_e8s(10_000),
                 from_subaccount: Some(self.from_subaccount),
                 to: self.cmc.get_top_up_address(target_canister_id),
@@ -79,17 +101,20 @@ impl ObtainCycles for MintCycles {
                     "Error transferring ICP to CMC account: code={:?}, message={}",
                     err.0, err.1
                 ),
-                // failed transfers should be safe to retry
                 can_retry: true,
             })?;
 
-        let block_index = call_result.map_err(|err| ObtainCycleError {
+        call_result.map_err(|err| ObtainCycleError {
             can_retry: matches!(&err, ic_ledger_types::TransferError::TxCreatedInFuture),
-            details: format!("Error transferring ICP to CMC account: {}", err),
-        })?;
+            details: format!("Error transferring ICP to CMC account: {err}"),
+        })
+    }
 
-        // notify the CMC canister about the transfer so it can mint cycles
-        // retry if the transaction is still processing
+    async fn notify_cmc_top_up(
+        &self,
+        block_index: u64,
+        target_canister_id: Principal,
+    ) -> Result<u128, ObtainCycleError> {
         let mut retries_left = 10;
 
         loop {
@@ -102,75 +127,74 @@ impl ObtainCycles for MintCycles {
             {
                 Err(err) => {
                     if retries_left == 0 {
-                        // retry the notify call
-                        Err(ObtainCycleError {
+                        return Err(ObtainCycleError {
                             details: format!(
                                 "Error notifying CMC about top-up: code={:?}, message={}",
                                 err.0, err.1
                             ),
                             can_retry: false,
-                        })?;
+                        });
                     } else {
                         continue;
                     }
                 }
-                Ok(NotifyTopUpResult::Ok(cycles)) => {
-                    // exit the retry loop
-                    return Ok(cycles);
-                }
+                Ok(NotifyTopUpResult::Ok(cycles)) => return Ok(cycles),
                 Ok(NotifyTopUpResult::Err(err)) => match &err {
                     NotifyError::Refunded {
                         reason,
                         block_index,
-                    } => Err(ObtainCycleError {
-                        details: format!(
-                            "Top-up transaction refunded: reason={}, block_index={:?}",
-                            reason, block_index
-                        ),
-                        can_retry: true,
-                    }),
+                    } => {
+                        return Err(ObtainCycleError {
+                            details: format!(
+                                "Top-up transaction refunded: reason={reason}, block_index={block_index:?}"
+                            ),
+                            can_retry: true,
+                        });
+                    }
                     NotifyError::Processing => {
                         if retries_left == 0 {
-                            Err(ObtainCycleError {
+                            return Err(ObtainCycleError {
                                 details: "Top-up transaction still processing after retries."
                                     .to_owned(),
                                 can_retry: false,
-                            })?;
+                            });
                         }
                         continue;
                     }
-                    NotifyError::TransactionTooOld(_) => Err(ObtainCycleError {
-                        details: "Top-up transaction too old.".to_owned(),
-                        can_retry: false,
-                    }),
-                    NotifyError::InvalidTransaction(message) => Err(ObtainCycleError {
-                        details: format!("Invalid top-up transaction: {}", message),
-                        can_retry: false,
-                    }),
+                    NotifyError::TransactionTooOld(_) => {
+                        return Err(ObtainCycleError {
+                            details: "Top-up transaction too old.".to_owned(),
+                            can_retry: false,
+                        });
+                    }
+                    NotifyError::InvalidTransaction(message) => {
+                        return Err(ObtainCycleError {
+                            details: format!("Invalid top-up transaction: {message}"),
+                            can_retry: false,
+                        });
+                    }
                     NotifyError::Other {
                         error_code,
                         error_message,
                     } => {
                         if retries_left == 0 {
-                            Err(ObtainCycleError {
+                            return Err(ObtainCycleError {
                                 details: format!(
-                                    "Error notifying CMC about top-up: code={}, message={}",
-                                    error_code, error_message
+                                    "Error notifying CMC about top-up: code={error_code}, message={error_message}"
                                 ),
                                 can_retry: false,
-                            })?;
+                            });
                         }
                         continue;
                     }
-                }?,
-            };
+                },
+            }
         }
     }
 }
 
 #[cfg(test)]
 mod test {
-
     use ic_cdk::api::call::RejectionCode;
 
     use super::*;
