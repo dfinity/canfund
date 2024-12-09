@@ -19,17 +19,10 @@ lazy_static! {
 
         PathBuf::from(current_dir)
     };
-    static ref OUT_DIR: PathBuf = {
-        let out_dir = CURRENT_DIR.join("wasms");
 
-        if !out_dir.exists() {
-            fs::create_dir_all(&out_dir).expect("Failed to create out directory");
-            fs::set_permissions(&out_dir, fs::Permissions::from_mode(0o755))
-                .expect("Failed to set permissions");
-        }
+    static ref WASM_OUT_DIR: PathBuf = CURRENT_DIR.join("wasms");
+    static ref OUT_DIR: PathBuf = CURRENT_DIR.to_path_buf();
 
-        out_dir
-    };
     static ref WORKSPACE_ROOT: PathBuf = {
         let manifest_path = CURRENT_DIR.join("Cargo.toml");
 
@@ -131,7 +124,7 @@ pub fn build_wasm(package: &str) {
         "target/wasm32-unknown-unknown/release/{}.wasm",
         package.replace('-', "_")
     ));
-    let out_file = OUT_DIR.join(format!("{}.wasm", package));
+    let out_file = WASM_OUT_DIR.join(format!("{}.wasm", package));
 
     fs::rename(wasm_file, out_file.clone()).expect("Failed to move wasm file");
     fs::set_permissions(out_file.clone(), fs::Permissions::from_mode(0o755))
@@ -211,7 +204,7 @@ pub fn download_pocket_ic() {
     }
 
     let pocket_ic_url = format!(
-        "https://github.com/dfinity/pocketic/releases/download/4.0.0/pocket-ic-x86_64-{}.gz",
+        "https://github.com/dfinity/pocketic/releases/download/7.0.0/pocket-ic-x86_64-{}.gz",
         OS_TYPE.as_str()
     );
     let output_path = OUT_DIR.join(format!("pocket-ic-x86_64-{}.gz", OS_TYPE.as_str()));
@@ -241,26 +234,30 @@ pub fn download_pocket_ic() {
 }
 
 pub fn download_icp_ledger_wasm() {
-    if OUT_DIR.join("icp_ledger.wasm.gz").exists() {
+    if WASM_OUT_DIR.join("icp_ledger.wasm.gz").exists() {
         println!("ICP Ledger Wasm already available, skipping download");
         return;
     }
 
     let icp_ledger_wasm_url = "https://download.dfinity.systems/ic/3d6a76efba59d6f03026d6b7c1c9a1dfce96ee93/canisters/ledger-canister.wasm.gz";
 
-    download(icp_ledger_wasm_url, &OUT_DIR.join("icp_ledger.wasm.gz"))
-        .expect("Failed to download icp_ledger.wasm.gz");
+    download(
+        icp_ledger_wasm_url,
+        &WASM_OUT_DIR.join("icp_ledger.wasm.gz"),
+    )
+    .expect("Failed to download icp_ledger.wasm.gz");
 }
 
 pub fn download_cmc_wasm() {
-    if OUT_DIR.join("cmc.wasm.gz").exists() {
+    if WASM_OUT_DIR.join("cmc.wasm.gz").exists() {
         println!("ICP CMC Wasm already available, skipping download");
         return;
     }
 
     let cmc_wasm_url = "https://download.dfinity.systems/ic/3d6a76efba59d6f03026d6b7c1c9a1dfce96ee93/canisters/cycles-minting-canister.wasm.gz";
 
-    download(cmc_wasm_url, &OUT_DIR.join("cmc.wasm.gz")).expect("Failed to download cmc.wasm.gz");
+    download(cmc_wasm_url, &WASM_OUT_DIR.join("cmc.wasm.gz"))
+        .expect("Failed to download cmc.wasm.gz");
 }
 
 pub fn main() {

@@ -44,7 +44,7 @@ pub fn start_canister_cycles_monitoring(config: FundingConfig) {
             .with_interval_secs(12 * 60 * 60) // twice a day
             .with_strategy(FundStrategy::BelowThreshold(
                 CyclesThreshold::new()
-                    .with_min_cycles(125_000_000_000)
+                    .with_min_cycles(400_000_000_000)
                     .with_fund_cycles(250_000_000_000),
             ));
 
@@ -57,7 +57,7 @@ pub fn start_canister_cycles_monitoring(config: FundingConfig) {
                     .with_cycles_fetcher(Arc::new(FetchCyclesBalanceFromCanisterStatus::new()))
                     .with_strategy(FundStrategy::BelowThreshold(
                         CyclesThreshold::new()
-                            .with_min_cycles(125_000_000_000)
+                            .with_min_cycles(400_000_000_000)
                             .with_fund_cycles(500_000_000_000),
                     )),
             );

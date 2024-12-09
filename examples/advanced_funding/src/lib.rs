@@ -50,7 +50,7 @@ pub fn start_canister_cycles_monitoring(config: FundingConfig) {
                     .with_min_runtime_secs(2 * 24 * 60 * 60) // 2 day
                     .with_fund_runtime_secs(5 * 24 * 60 * 60) // 3 days
                     .with_max_runtime_cycles_fund(1_000_000_000_000)
-                    .with_fallback_min_cycles(125_000_000_000)
+                    .with_fallback_min_cycles(400_000_000_000)
                     .with_fallback_fund_cycles(250_000_000_000),
             ))
             .with_funding_callback(Rc::new(|records| {
@@ -88,7 +88,7 @@ pub fn start_canister_cycles_monitoring(config: FundingConfig) {
                 .with_cycles_fetcher(Arc::new(FetchCyclesBalanceFromCanisterStatus::new()))
                 .with_strategy(FundStrategy::BelowThreshold(
                     CyclesThreshold::new()
-                        .with_min_cycles(125_000_000_000)
+                        .with_min_cycles(500_000_000_000)
                         .with_fund_cycles(750_000_000_000),
                 )),
         );

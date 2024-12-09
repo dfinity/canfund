@@ -51,7 +51,7 @@ Or alternatively manually define the dependency in your `Cargo.toml` file:
 
 Then, use `canfund` in your canister code:
 
-```rust
+```rust,ignore
 use canfund;
 ```
 
@@ -74,7 +74,7 @@ Each canister that you want to fund using `canfund` must be registered. During r
 
    This method is only applicable if the funding canister has the required permissions to invoke the target canister’s method, such as being a controller when interacting with the management canister.
 
-   ```rust
+   ```rust,ignore
    // By default, using the management canister (funding canister is a controller)
    let fetcher = FetchCyclesBalanceFromCanisterStatus::new();
    
@@ -94,7 +94,7 @@ Each canister that you want to fund using `canfund` must be registered. During r
 
 3. **FetchCyclesBalanceFromPrometheusMetrics**: Fetches the cycle balance by leveraging Prometheus metrics exposed by the canister through an HTTP endpoint.
 
-   ```rust
+   ```rust,ignore
    let fetcher = FetchCyclesBalanceFromPrometheusMetrics::new(
        "/metrics".to_string(), // path
        "canister_cycles_balance".to_string(), // metric name
@@ -103,7 +103,7 @@ Each canister that you want to fund using `canfund` must be registered. During r
 
 To register a canister with selected `fetcher`:
 
-```rust
+```rust,ignore
 fund_manager.register(
     Principal::from_text("funded_canister_id").unwrap(),
     RegisterOpts::new().with_cycles_fetcher(
@@ -118,7 +118,7 @@ fund_manager.register(
 
 1. **BelowThreshold (Default)**: Funds the canister when its cycle balance falls below a predefined threshold.
 
-   ```rust
+   ```rust,ignore
    let strategy = FundStrategy::BelowThreshold(
        CyclesThreshold::new()
            .with_min_cycles(125_000_000_000)
@@ -128,7 +128,7 @@ fund_manager.register(
 
 2. **BelowEstimatedRuntime**: Funds the canister based on an estimated runtime in seconds. This strategy calculates the required cycles to keep the canister running for the specified duration.
 
-   ```rust
+   ```rust,ignore
    let strategy = FundStrategy::BelowEstimatedRuntime(
        EstimatedRuntime::new()
            .with_min_runtime_secs(2 * 24 * 60 * 60) // 2 day
@@ -141,7 +141,7 @@ fund_manager.register(
 
 3. **Always**: Funds the canister at a fixed interval with a specified amount of cycles, regardless of the current balance.
 
-   ```rust
+   ```rust,ignore
    let strategy = FundStrategy::Always(1_000);
    ```
 
@@ -151,7 +151,7 @@ fund_manager.register(
 
 To enable this feature, you must provide the necessary configuration to allow `canfund` to mint cycles. This configuration can also be set for each registered canister to override the global configuration.
 
-```rust
+```rust,ignore
 let obtain_cycles_config = ObtainCyclesOptions {
     obtain_cycles: Arc::new(MintCycles {
         ledger: Arc::new(IcLedgerCanister::new(MAINNET_LEDGER_CANISTER_ID)),
@@ -173,7 +173,7 @@ With this configuration, `canfund` will periodically check the ICP balance and m
 
 Example of registering a callback:
 
-```rust
+```rust,ignore
 let funding_config = FundManagerOptions::new()
     .with_funding_callback(Rc::new(|canister_records| {
         // custom monitoring || logging logic
@@ -186,7 +186,7 @@ let funding_config = FundManagerOptions::new()
 
 Initialize `canfund` with your configuration:
 
-```rust
+```rust,ignore
 let funding_config = FundManagerOptions::new()
         .with_interval_secs(12 * 60 * 60) // check twice a day
         .with_strategy(strategy); 
@@ -198,7 +198,7 @@ fund_manager.with_options(funding_config);
 
 Here's a basic example of using `canfund` for automated cycles management:
 
-```rust
+```rust,ignore
 use canfund::{manager::{options::{CyclesThreshold, FundManagerOptions, FundStrategy}, RegisterOpts}, operations::fetch::FetchCyclesBalanceFromCanisterStatus, FundManager};
 
 #[ic_cdk_macros::init]
