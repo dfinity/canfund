@@ -211,7 +211,7 @@ pub fn download_pocket_ic() {
     }
 
     let pocket_ic_url = format!(
-        "https://github.com/dfinity/pocketic/releases/download/4.0.0/pocket-ic-x86_64-{}.gz",
+        "https://github.com/dfinity/pocketic/releases/download/7.0.0/pocket-ic-x86_64-{}.gz",
         OS_TYPE.as_str()
     );
     let output_path = OUT_DIR.join(format!("pocket-ic-x86_64-{}.gz", OS_TYPE.as_str()));
