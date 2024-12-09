@@ -143,48 +143,39 @@ fn install_canisters(env: &PocketIc, controller: Principal, minter: Principal) -
 
 pub fn install_simple_funding_canister(
     env: &PocketIc,
-    controller: Principal,
-    cycles: u128,
+    sender: Principal,
+    effective_canister_id: Principal,
     funded_canister_ids: Vec<Principal>,
-) -> Principal {
-    // simple funding canister starts with more cycles so it does not run out of cycles before the funded canister does
-    let funding_canister_id = create_canister_with_cycles(env, controller, cycles);
-
+) {
     let funding_canister_wasm = get_canister_wasm("simple_funding").to_vec();
     let funding_canister_args = FundingConfig {
         funded_canister_ids,
     };
     env.install_canister(
-        funding_canister_id,
+        effective_canister_id,
         funding_canister_wasm,
         Encode!(&funding_canister_args).unwrap(),
-        Some(controller),
+        Some(sender),
     );
-
-    funding_canister_id
 }
 
 pub fn install_advanced_funding_canister(
     env: &PocketIc,
-    controller: Principal,
-    cycles: u128,
+    sender: Principal,
+    effective_canister_id: Principal,
     funded_canister_ids: Vec<Principal>,
-) -> Principal {
-    // simple funding canister starts with more cycles so it does not run out of cycles before the funded canister does
-    let funding_canister_id = create_canister_with_cycles(env, controller, cycles);
-
+) {
     let funding_canister_wasm = get_canister_wasm("advanced_funding").to_vec();
     let funding_canister_args = FundingConfig {
         funded_canister_ids,
     };
+
     env.install_canister(
-        funding_canister_id,
+        effective_canister_id,
         funding_canister_wasm,
         Encode!(&funding_canister_args).unwrap(),
-        Some(controller),
+        Some(sender),
     );
-
-    funding_canister_id
 }
 
 pub fn install_funded_canister(env: &PocketIc, controller: Principal, cycles: u128) -> Principal {

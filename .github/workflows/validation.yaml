@@ -1,0 +1,38 @@
+name: "Code validation"
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+      - labeled
+  merge_group:
+    types: [checks_requested]
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+env:
+  CARGO_TERM_COLOR: always
+  # When getting Rust dependencies, retry on network error:
+  CARGO_NET_RETRY: 10
+  # Use the local .curlrc
+  CURL_HOME: .
+
+jobs:
+  validate-rust:
+    name: "validate-rust:required"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+      - name: "Check code"
+        run: |
+          cargo fmt --all -- --check
+          cargo clippy --locked --verbose --tests --benches --workspace -- -D clippy::all
+        env:
+          RUST_BACKTRACE: 1
