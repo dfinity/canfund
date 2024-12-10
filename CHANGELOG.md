@@ -1,3 +1,9 @@
+## 0.5.0 (2024-12-10)
+
+### Feat
+
+- bump ic cdk dependencies (#32)
+
 ## 0.4.0 (2024-11-19)
 
 ### BREAKING CHANGE
