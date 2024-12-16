@@ -14,6 +14,8 @@ pub struct CanisterRecord {
     consumption_history: ConsumptionHistory,
     /// The cumulative total of cycles deposited to the canister.
     deposited_cycles: Option<CyclesBalance>,
+    /// The last deposited cycles to the canister.
+    last_deposited_cycles: Option<CyclesBalance>,
     /// The method to fetch the canister cycles balance.
     cycles_fetcher: Arc<dyn FetchCyclesBalance>,
     /// Optional fund strategy for the canister which overrides the global strategy.
@@ -34,6 +36,7 @@ impl CanisterRecord {
             consumption_history: ConsumptionHistory::new(history_window_size),
             previous_cycles: None,
             deposited_cycles: None,
+            last_deposited_cycles: None,
             cycles_fetcher,
             strategy,
             obtain_cycles_options,
@@ -71,6 +74,10 @@ impl CanisterRecord {
             self.deposited_cycles = Some(deposited_cycles.clone());
         }
 
+        // Adds the last deposited cycles to the record, so it can be used to facilitate consumer's decision making
+        // when the CanisterRecord is retrieved.
+        self.last_deposited_cycles = Some(deposited_cycles.clone());
+
         // Update the cycles balance to reflect the deposited amount.
         // This allows for the history to be accuratly calculated.
         self.cycles = self.cycles.as_ref().map(|cycles| {
@@ -80,6 +87,10 @@ impl CanisterRecord {
 
     pub fn get_deposited_cycles(&self) -> &Option<CyclesBalance> {
         &self.deposited_cycles
+    }
+
+    pub fn get_last_deposited_cycles(&self) -> &Option<CyclesBalance> {
+        &self.last_deposited_cycles
     }
 
     pub fn get_cycles_fetcher(&self) -> Arc<dyn FetchCyclesBalance> {
@@ -149,6 +160,11 @@ mod tests {
         assert_eq!(
             canister_record.get_deposited_cycles(),
             &Some(CyclesBalance::new(100, deposited_cycles.timestamp))
+        );
+
+        assert_eq!(
+            canister_record.get_last_deposited_cycles(),
+            &Some(CyclesBalance::new(50, deposited_cycles.timestamp))
         );
 
         assert_eq!(canister_record.get_average_consumption(), 0);
