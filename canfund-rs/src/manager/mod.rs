@@ -132,6 +132,11 @@ impl FundManager {
         self.inner.borrow().canisters.clone()
     }
 
+    /// Returns the canister record for the specified canister id.
+    pub fn get_canister(&self, canister_id: CanisterId) -> Option<CanisterRecord> {
+        self.inner.borrow().canisters.get(&canister_id).cloned()
+    }
+
     /// Returns the options for the fund manager.
     pub fn get_options(&self) -> FundManagerOptions {
         self.inner.borrow().options.clone()
