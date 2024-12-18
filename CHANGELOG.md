@@ -1,3 +1,9 @@
+## 0.6.0 (2024-12-18)
+
+### Feat
+
+- **canfund**: include last deposited cycles to the canister record (#35)
+
 ## 0.5.0 (2024-12-10)
 
 ### Feat
