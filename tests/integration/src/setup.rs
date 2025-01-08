@@ -16,7 +16,7 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
-static POCKET_IC_BIN: &str = "./wasms/pocket-ic";
+static POCKET_IC_BIN: &str = "./pocket-ic";
 
 #[derive(Serialize, CandidType, Clone, Debug, PartialEq, Eq)]
 pub struct CyclesCanisterInitPayload {
