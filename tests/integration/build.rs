@@ -260,6 +260,21 @@ pub fn download_cmc_wasm() {
         .expect("Failed to download cmc.wasm.gz");
 }
 
+pub fn download_cycles_ledger_wasm() {
+    if WASM_OUT_DIR.join("cycles_ledger.wasm.gz").exists() {
+        println!("Cycles ledger Wasm already available, skipping download");
+        return;
+    }
+
+    let cycles_ledger_wasm = "https://github.com/dfinity/cycles-ledger/releases/download/cycles-ledger-v1.0.3/cycles-ledger.wasm.gz";
+
+    download(
+        cycles_ledger_wasm,
+        &WASM_OUT_DIR.join("cycles_ledger.wasm.gz"),
+    )
+    .expect("Failed to download cycles_ledger.wasm.gz");
+}
+
 pub fn main() {
     for dep in DEPENDENCIES.iter() {
         println!("cargo:rerun-if-changed={}", dep.display());
@@ -269,6 +284,7 @@ pub fn main() {
     download_ic_wasm();
     download_icp_ledger_wasm();
     download_cmc_wasm();
+    download_cycles_ledger_wasm();
 
     // Build all wasm packages that are part of the benchmark suite
     for package in EXAMPLES_WASMS.iter() {

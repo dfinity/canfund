@@ -28,6 +28,16 @@ pub struct CyclesCanisterInitPayload {
     pub last_purged_notification: Option<u64>,
 }
 
+#[derive(Serialize, CandidType, Clone, Debug, PartialEq, Eq)]
+pub struct CyclesLedgerCanisterInitPayload {
+    pub max_blocks_per_request: u64,
+}
+
+#[derive(Serialize, CandidType, Clone, Debug, PartialEq, Eq)]
+pub enum CyclesLedgerInitPayload {
+    Init(CyclesLedgerCanisterInitPayload),
+}
+
 pub fn setup_new_env() -> TestEnv {
     let path = match env::var_os("POCKET_IC_BIN") {
         None => {
@@ -96,6 +106,18 @@ fn install_canisters(env: &PocketIc, controller: Principal, minter: Principal) -
         .unwrap();
     assert_eq!(cmc_canister_id, MAINNET_CYCLES_MINTING_CANISTER_ID);
 
+    let cycles_ledger_canister_id = env
+        .create_canister_with_id(
+            Some(controller),
+            None,
+            Principal::from_text("um5iw-rqaaa-aaaaq-qaaba-cai").unwrap(),
+        )
+        .unwrap();
+    assert_eq!(
+        cycles_ledger_canister_id,
+        Principal::from_text("um5iw-rqaaa-aaaaq-qaaba-cai").unwrap()
+    );
+
     let nns_governance_canister_id = Principal::from_text("rrkah-fqaaa-aaaaa-aaaaq-cai").unwrap();
 
     let controller_account = AccountIdentifier::new(&controller, &DEFAULT_SUBACCOUNT);
@@ -125,7 +147,7 @@ fn install_canisters(env: &PocketIc, controller: Principal, minter: Principal) -
         ledger_canister_id: Some(nns_ledger_canister_id),
         governance_canister_id: Some(nns_governance_canister_id),
         minting_account_id: Some(minting_account),
-        cycles_ledger_canister_id: None,
+        cycles_ledger_canister_id: Some(cycles_ledger_canister_id),
         last_purged_notification: Some(0),
     });
     env.install_canister(
@@ -135,9 +157,23 @@ fn install_canisters(env: &PocketIc, controller: Principal, minter: Principal) -
         Some(controller),
     );
 
+    let cycles_ledger_canister_wasm = get_canister_wasm("cycles_ledger").to_vec();
+    let cycles_ledger_init_args: CyclesLedgerInitPayload =
+        CyclesLedgerInitPayload::Init(CyclesLedgerCanisterInitPayload {
+            max_blocks_per_request: 100,
+        });
+
+    env.install_canister(
+        cycles_ledger_canister_id,
+        cycles_ledger_canister_wasm,
+        Encode!(&cycles_ledger_init_args).unwrap(),
+        Some(controller),
+    );
+
     CanisterIds {
         icp_ledger: nns_ledger_canister_id,
         cycles_minting_canister: cmc_canister_id,
+        cycles_ledger_canister: cycles_ledger_canister_id,
     }
 }
 
@@ -166,6 +202,25 @@ pub fn install_advanced_funding_canister(
     funded_canister_ids: Vec<Principal>,
 ) {
     let funding_canister_wasm = get_canister_wasm("advanced_funding").to_vec();
+    let funding_canister_args = FundingConfig {
+        funded_canister_ids,
+    };
+
+    env.install_canister(
+        effective_canister_id,
+        funding_canister_wasm,
+        Encode!(&funding_canister_args).unwrap(),
+        Some(sender),
+    );
+}
+
+pub fn install_cycles_ledger_funding_canister(
+    env: &PocketIc,
+    sender: Principal,
+    effective_canister_id: Principal,
+    funded_canister_ids: Vec<Principal>,
+) {
+    let funding_canister_wasm = get_canister_wasm("cycles_ledger_funding").to_vec();
     let funding_canister_args = FundingConfig {
         funded_canister_ids,
     };

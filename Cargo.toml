@@ -3,6 +3,7 @@ members = [
   "canfund-rs",
   "examples/simple_funding",
   "examples/advanced_funding",
+  "examples/cycles_ledger_funding",
   "tests/integration",
 ]
 resolver = "2"

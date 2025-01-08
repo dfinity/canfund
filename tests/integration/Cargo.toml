@@ -8,6 +8,7 @@ edition = '2021'
 candid = { workspace = true }
 simple_funding = { path = '../../examples/simple_funding', version = '0.1.0' }
 ic-ledger-types = { workspace = true }
+icrc-ledger-types = { workspace = true }
 lazy_static = { workspace = true }
 pocket-ic = { workspace = true }
 reqwest = { workspace = true }

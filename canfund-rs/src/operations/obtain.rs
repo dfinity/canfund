@@ -1,14 +1,17 @@
 use std::sync::Arc;
 
-use async_trait::async_trait;
-use candid::Principal;
-use ic_ledger_types::{Memo, Subaccount, Tokens, TransferArgs};
-
 use crate::api::cmc::GetIcpXdrResult;
+use crate::api::ledger::WithdrawableLedgerCanister;
 use crate::api::{
     cmc::{CyclesMintingCanister, NotifyError, NotifyTopUpResult},
     ledger::LedgerCanister,
 };
+use crate::types::{WithdrawArgs, WithdrawError};
+use async_trait::async_trait;
+use candid::Principal;
+use ic_ledger_types::{Memo, Subaccount, Tokens, TransferArgs};
+use icrc_ledger_types::icrc1::account;
+use icrc_ledger_types::icrc1::transfer::BlockIndex;
 
 #[derive(Debug)]
 pub struct ObtainCycleError {
@@ -56,7 +59,8 @@ impl ObtainCycles for MintCycles {
 
         // notify the CMC canister about the transfer so it can mint cycles
         // retry if the transaction is still processing
-        self.notify_cmc_top_up(block_index, target_canister_id).await
+        self.notify_cmc_top_up(block_index, target_canister_id)
+            .await
     }
 }
 
@@ -193,12 +197,93 @@ impl MintCycles {
     }
 }
 
+pub struct WithdrawFromLedger {
+    pub ledger: Arc<dyn WithdrawableLedgerCanister>,
+    pub from_subaccount: Option<account::Subaccount>,
+}
+
+#[async_trait]
+impl ObtainCycles for WithdrawFromLedger {
+    async fn obtain_cycles(
+        &self,
+        amount: u128,
+        target_canister_id: Principal,
+    ) -> Result<u128, ObtainCycleError> {
+        self.withdraw(amount, target_canister_id).await?;
+        Ok(amount)
+    }
+}
+
+impl WithdrawFromLedger {
+    /// # Errors
+    /// Returns an error if the withdrawal fails.
+    pub async fn withdraw(
+        &self,
+        amount: u128,
+        to: Principal,
+    ) -> Result<BlockIndex, ObtainCycleError> {
+        let call_result = self
+            .ledger
+            .withdraw(WithdrawArgs {
+                amount: amount.into(),
+                from_subaccount: self.from_subaccount,
+                to,
+                created_at_time: None,
+            })
+            .await
+            .map_err(|err| ObtainCycleError {
+                details: format!("rejection_code: {:?}, err: {}", err.0, err.1),
+                can_retry: true,
+            })?;
+
+        call_result.map_err(|err| ObtainCycleError {
+            details: match &err {
+                WithdrawError::BadFee { expected_fee } => {
+                    format!("Bad fee, expected: {expected_fee}")
+                }
+                WithdrawError::InsufficientFunds { balance } => {
+                    format!("Insufficient balance, balance: {balance}")
+                }
+                WithdrawError::TooOld => "Tx too old".to_string(),
+                WithdrawError::CreatedInFuture { .. } => "Tx created in future".to_string(),
+                WithdrawError::Duplicate { duplicate_of } => {
+                    format!("Tx duplicate, duplicate_of: {duplicate_of}")
+                }
+                WithdrawError::FailedToWithdraw {
+                    rejection_code,
+                    rejection_reason,
+                    ..
+                } => {
+                    format!(
+                        "Failed to withdraw. Code:{rejection_code:?}, reason:{rejection_reason}"
+                    )
+                }
+                WithdrawError::TemporarilyUnavailable => {
+                    "Ledger temporarily unavailable".to_string()
+                }
+                WithdrawError::GenericError {
+                    error_code,
+                    message,
+                } => {
+                    format!("Error occurred. Code: {error_code}, message: {message}")
+                }
+                WithdrawError::InvalidReceiver { receiver } => {
+                    format!("Invalid receiver: {receiver}")
+                }
+            },
+            can_retry: matches!(&err, WithdrawError::CreatedInFuture { .. }),
+        })
+    }
+}
+
 #[cfg(test)]
 mod test {
     use ic_cdk::api::call::RejectionCode;
 
     use super::*;
+    use crate::api::ledger::test::TestCyclesLedgerCanister;
     use crate::api::{cmc::test::TestCmcCanister, ledger::test::TestLedgerCanister};
+    use crate::types::NumCycles;
 
     #[tokio::test]
     async fn test_obtain_by_minting() {
@@ -276,5 +361,26 @@ mod test {
                 assert_eq!(cmc.notify_top_up_called_with.read().await.len(), 1);
             }
         }
+    }
+
+    #[tokio::test]
+    async fn test_obtain_from_ledger() {
+        let ledger = Arc::new(TestCyclesLedgerCanister::default());
+
+        let obtain = WithdrawFromLedger {
+            ledger: ledger.clone(),
+            from_subaccount: None,
+        };
+
+        obtain
+            .obtain_cycles(1_000_000_000_000, Principal::anonymous())
+            .await
+            .expect("obtain_cycles failed");
+
+        // calls to transfer ICP to the CMC account
+        assert!(matches!(
+            ledger.transfer_called_with.read().await.first(),
+            Some(WithdrawArgs { amount, .. }) if amount == &NumCycles::from(1_000_000_000_000u64)
+        ));
     }
 }

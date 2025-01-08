@@ -300,6 +300,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "cycles_ledger_funding"
+version = "0.1.0"
+dependencies = [
+ "candid",
+ "canfund",
+ "ic-cdk",
+ "ic-cdk-macros",
+ "icrc-ledger-types",
+ "serde",
+]
+
+[[package]]
 name = "data-encoding"
 version = "2.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -830,6 +842,7 @@ version = "0.0.1"
 dependencies = [
  "candid",
  "ic-ledger-types",
+ "icrc-ledger-types",
  "lazy_static",
  "pocket-ic",
  "reqwest",
