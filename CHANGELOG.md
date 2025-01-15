@@ -1,3 +1,9 @@
+## 0.7.0 (2025-01-15)
+
+### Feat
+
+- use cycles ledger to obtain cycles (#37)
+
 ## 0.6.0 (2024-12-18)
 
 ### Feat
