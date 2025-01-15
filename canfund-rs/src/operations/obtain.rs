@@ -278,12 +278,12 @@ impl WithdrawFromCyclesLedger {
 
 #[cfg(test)]
 mod test {
+    use candid::Nat;
     use ic_cdk::api::call::RejectionCode;
 
     use super::*;
     use crate::api::ledger::test::TestCyclesLedgerCanister;
     use crate::api::{cmc::test::TestCmcCanister, ledger::test::TestLedgerCanister};
-    use crate::types::NumCycles;
 
     #[tokio::test]
     async fn test_obtain_by_minting() {
@@ -380,7 +380,7 @@ mod test {
         // calls to transfer ICP to the CMC account
         assert!(matches!(
             ledger.transfer_called_with.read().await.first(),
-            Some(WithdrawArgs { amount, .. }) if amount == &NumCycles::from(1_000_000_000_000u64)
+            Some(WithdrawArgs { amount, .. }) if amount == &Nat::from(1_000_000_000_000u64)
         ));
     }
 }

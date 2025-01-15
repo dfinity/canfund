@@ -23,7 +23,6 @@ pub struct HttpResponse {
     pub body: Vec<u8>,
 }
 
-pub type NumCycles = Nat;
 #[derive(CandidType, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct WithdrawArgs {
     #[serde(default)]
@@ -31,16 +30,16 @@ pub struct WithdrawArgs {
     pub to: Principal,
     #[serde(default)]
     pub created_at_time: Option<u64>,
-    pub amount: NumCycles,
+    pub amount: Nat,
 }
 
 #[derive(CandidType, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum WithdrawError {
     BadFee {
-        expected_fee: NumCycles,
+        expected_fee: Nat,
     },
     InsufficientFunds {
-        balance: NumCycles,
+        balance: Nat,
     },
     TooOld,
     CreatedInFuture {
