@@ -170,7 +170,7 @@ With this configuration, `canfund` will periodically check the ICP balance and m
 
 #### Withdrawing Cycles
 
-Alternatively, `canfund` can be configured to withdraw cycles from the cycles ledger. This is achieved by interacting with the Cycles Ledger using the `WithdrawFromCyclesLedger` struct.
+Alternatively, `canfund` can be configured to withdraw cycles from the [cycles ledger](https://dashboard.internetcomputer.org/canister/um5iw-rqaaa-aaaaq-qaaba-cai). This is achieved by interacting with the Cycles Ledger using the `WithdrawFromCyclesLedger` struct.
 
 To enable this feature, you must provide the necessary configuration to allow `canfund` to withdraw cycles. This configuration can also be set for each registered canister to override the global configuration.
 
