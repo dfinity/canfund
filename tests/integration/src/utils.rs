@@ -110,7 +110,7 @@ pub fn advance_time_to_burn_cycles(
     }
 
     // advance time to burn the remaining cycles
-    let advance_times_to_burn_cycles = (cycles_to_burn + burned_cycles - 1) / burned_cycles;
+    let advance_times_to_burn_cycles = cycles_to_burn.div_ceil(burned_cycles);
     let burn_duration = Duration::from_secs(jump_secs * advance_times_to_burn_cycles as u64);
     env.advance_time(burn_duration);
     env.tick();

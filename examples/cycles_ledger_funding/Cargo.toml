@@ -1,0 +1,16 @@
+[package]
+name = "cycles_ledger_funding"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+path = "src/lib.rs"
+
+[dependencies]
+candid = { workspace = true }
+canfund = { path = "../../canfund-rs" }
+ic-cdk = { workspace = true }
+ic-cdk-macros = { workspace = true }
+icrc-ledger-types = { workspace = true }
+serde = { workspace = true, features = ['derive'] }

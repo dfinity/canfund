@@ -19,4 +19,5 @@ pub struct TestEnv {
 pub struct CanisterIds {
     pub icp_ledger: Principal,
     pub cycles_minting_canister: Principal,
+    pub cycles_ledger_canister: Principal,
 }

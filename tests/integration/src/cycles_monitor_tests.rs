@@ -1,19 +1,21 @@
-use std::time::Duration;
-
-use ic_ledger_types::{AccountIdentifier, DEFAULT_SUBACCOUNT};
-
 use crate::interfaces::{
     get_icp_account_balance, query_deposited_cycles, send_icp_to_account, ICP,
 };
 use crate::setup::{
-    create_canister_with_cycles, install_advanced_funding_canister, install_funded_canister,
+    create_canister_with_cycles, install_advanced_funding_canister,
+    install_cycles_ledger_funding_canister, install_funded_canister,
     install_simple_funding_canister, setup_new_env,
 };
 use crate::utils::{advance_time_to_burn_cycles, controller_test_id};
 use crate::TestEnv;
+use candid::{CandidType, Deserialize, Encode};
+use ic_ledger_types::{AccountIdentifier, DEFAULT_SUBACCOUNT};
+use icrc_ledger_types::icrc1::account::Account;
+use icrc_ledger_types::icrc1::transfer::Memo;
+use std::time::Duration;
 
 #[test]
-fn successfuly_monitors_funded_canister_and_tops_up() {
+fn successfully_monitors_funded_canister_and_tops_up() {
     let TestEnv {
         env, controller, ..
     } = setup_new_env();
@@ -66,7 +68,7 @@ fn successfuly_monitors_funded_canister_and_tops_up() {
 }
 
 #[test]
-fn successfuly_stores_funding_data() {
+fn successfully_stores_funding_data() {
     let TestEnv {
         env, controller, ..
     } = setup_new_env();
@@ -185,6 +187,72 @@ fn can_mint_cycles_to_top_up_self() {
 
     assert_ne!(post_account_balance, 100 * ICP);
     assert!(post_account_balance < pre_account_balance);
+    assert!(post_cycle_balance > pre_cycle_balance);
+
+    // assert that while we lose some cycles during the process, it'll be roughly what we expect
+    assert!(
+        post_cycle_balance - pre_cycle_balance > 749_000_000_000
+            && post_cycle_balance - pre_cycle_balance < 750_000_000_000
+    );
+}
+
+#[test]
+fn can_obtain_from_cycles_ledger_to_top_up_self() {
+    let TestEnv {
+        env, controller, ..
+    } = setup_new_env();
+
+    let cycles_ledger_funding_canister_id =
+        create_canister_with_cycles(&env, controller, 1_400_000_000_000);
+
+    // install the funding canister to start monitoring itself and mint cycles
+    install_cycles_ledger_funding_canister(
+        &env,
+        controller,
+        cycles_ledger_funding_canister_id,
+        vec![],
+    );
+
+    #[derive(CandidType, Clone, Debug, PartialEq, Eq)]
+    pub struct DepositArg {
+        pub to: Account,
+        pub memo: Option<Memo>,
+        pub cycles: u128,
+    }
+
+    #[derive(CandidType, Deserialize, Clone, Debug, PartialEq, Eq)]
+    pub struct DepositResult {
+        pub block_index: u64,
+        pub balance: u64,
+    }
+
+    let arg = DepositArg {
+        to: Account::from(cycles_ledger_funding_canister_id),
+        memo: None,
+        cycles: 1_000_000_000_000,
+    };
+
+    env.update_call(
+        cycles_ledger_funding_canister_id,
+        controller,
+        "deposit",
+        Encode!(&arg).unwrap(),
+    )
+    .expect("deposit call failed");
+
+    let pre_cycle_balance = env.cycle_balance(cycles_ledger_funding_canister_id);
+
+    env.tick();
+    env.advance_time(Duration::from_secs(24 * 60 * 60));
+    env.tick();
+    env.tick();
+    env.tick();
+    env.tick();
+    env.tick();
+    env.tick();
+
+    let post_cycle_balance = env.cycle_balance(cycles_ledger_funding_canister_id);
+
     assert!(post_cycle_balance > pre_cycle_balance);
 
     // assert that while we lose some cycles during the process, it'll be roughly what we expect

@@ -6,25 +6,15 @@ edition = '2021'
 
 [dependencies]
 candid = { workspace = true }
-candid_parser = { workspace = true }
 simple_funding = { path = '../../examples/simple_funding', version = '0.1.0' }
-advanced_funding = { path = '../../examples/advanced_funding', version = '0.1.0' }
-hex = { workspace = true }
-ic-cdk = { workspace = true }
 ic-ledger-types = { workspace = true }
-itertools = { workspace = true }
+icrc-ledger-types = { workspace = true }
 lazy_static = { workspace = true }
-num-bigint = { workspace = true }
 pocket-ic = { workspace = true }
-rand = { workspace = true }
-rand_chacha = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true, features = ['derive'] }
 serde_json = { workspace = true }
-tempfile = { workspace = true }
-tokio = { workspace = true }
 toml = { workspace = true }
-uuid = { workspace = true }
 wat = { workspace = true }
 
 [build-dependencies]
