@@ -14,7 +14,7 @@ use icrc_ledger_types::icrc1::account;
 use icrc_ledger_types::icrc1::transfer::BlockIndex;
 
 #[derive(Debug)]
-pub struct ObtainCycleError {
+pub struct ObtainCyclesError {
     /// Details of the error.
     pub details: String,
     /// Whether the operation can be retried.
@@ -29,7 +29,7 @@ pub trait ObtainCycles: Send + Sync {
         &self,
         amount: u128,
         target_canister_id: Principal,
-    ) -> Result<u128, ObtainCycleError>;
+    ) -> Result<u128, ObtainCyclesError>;
 }
 
 pub struct MintCycles {
@@ -44,7 +44,7 @@ impl ObtainCycles for MintCycles {
         &self,
         amount: u128,
         target_canister_id: candid::Principal,
-    ) -> Result<u128, ObtainCycleError> {
+    ) -> Result<u128, ObtainCyclesError> {
         // get ICP/XDR rate from CMC
         let price = self.get_icp_xdr_price().await?;
 
@@ -65,11 +65,11 @@ impl ObtainCycles for MintCycles {
 }
 
 impl MintCycles {
-    async fn get_icp_xdr_price(&self) -> Result<GetIcpXdrResult, ObtainCycleError> {
+    async fn get_icp_xdr_price(&self) -> Result<GetIcpXdrResult, ObtainCyclesError> {
         self.cmc
             .get_icp_xdr()
             .await
-            .map_err(|err| ObtainCycleError {
+            .map_err(|err| ObtainCyclesError {
                 details: format!(
                     "Error getting ICP/XDR price from CMC: code={:?}, message={}",
                     err.0, err.1
@@ -78,29 +78,29 @@ impl MintCycles {
             })
     }
 
-    fn calculate_icp_amount(&self, amount: u128, price: u128) -> u128 {
+    fn calculate_icp_amount(&self, cycles_amount: u128, xdr_permyriad_per_icp: u128) -> u128 {
         let cycles_per_xdr: u128 = 1_000_000_000_000; // 1 trillion cycles per XDR
-        let cycles_per_icp: u128 = price * cycles_per_xdr / 10_000u128;
-        amount * 100_000_000u128 / cycles_per_icp
+        let cycles_per_icp: u128 = xdr_permyriad_per_icp * cycles_per_xdr / 10_000u128;
+        cycles_amount * 100_000_000u128 / cycles_per_icp
     }
 
     async fn transfer_icp_to_cmc(
         &self,
         icp_amount_e8s: u128,
         target_canister_id: Principal,
-    ) -> Result<u64, ObtainCycleError> {
+    ) -> Result<u64, ObtainCyclesError> {
         let call_result = self
             .ledger
             .transfer(TransferArgs {
                 memo: Memo(0x5055_5054),
-                amount: Tokens::from_e8s(icp_amount as u64),
+                amount: Tokens::from_e8s(icp_amount_e8s as u64),
                 fee: Tokens::from_e8s(10_000),
                 from_subaccount: Some(self.from_subaccount),
                 to: self.cmc.get_top_up_address(target_canister_id),
                 created_at_time: None,
             })
             .await
-            .map_err(|err| ObtainCycleError {
+            .map_err(|err| ObtainCyclesError {
                 details: format!(
                     "Error transferring ICP to CMC account: code={:?}, message={}",
                     err.0, err.1
@@ -108,7 +108,7 @@ impl MintCycles {
                 can_retry: true,
             })?;
 
-        call_result.map_err(|err| ObtainCycleError {
+        call_result.map_err(|err| ObtainCyclesError {
             can_retry: matches!(&err, ic_ledger_types::TransferError::TxCreatedInFuture),
             details: format!("Error transferring ICP to CMC account: {err}"),
         })
@@ -118,7 +118,7 @@ impl MintCycles {
         &self,
         block_index: u64,
         target_canister_id: Principal,
-    ) -> Result<u128, ObtainCycleError> {
+    ) -> Result<u128, ObtainCyclesError> {
         let mut retries_left = 10;
 
         loop {
@@ -131,7 +131,7 @@ impl MintCycles {
             {
                 Err(err) => {
                     if retries_left == 0 {
-                        return Err(ObtainCycleError {
+                        return Err(ObtainCyclesError {
                             details: format!(
                                 "Error notifying CMC about top-up: code={:?}, message={}",
                                 err.0, err.1
@@ -148,7 +148,7 @@ impl MintCycles {
                         reason,
                         block_index,
                     } => {
-                        return Err(ObtainCycleError {
+                        return Err(ObtainCyclesError {
                             details: format!(
                                 "Top-up transaction refunded: reason={reason}, block_index={block_index:?}"
                             ),
@@ -157,7 +157,7 @@ impl MintCycles {
                     }
                     NotifyError::Processing => {
                         if retries_left == 0 {
-                            return Err(ObtainCycleError {
+                            return Err(ObtainCyclesError {
                                 details: "Top-up transaction still processing after retries."
                                     .to_owned(),
                                 can_retry: false,
@@ -166,13 +166,13 @@ impl MintCycles {
                         continue;
                     }
                     NotifyError::TransactionTooOld(_) => {
-                        return Err(ObtainCycleError {
+                        return Err(ObtainCyclesError {
                             details: "Top-up transaction too old.".to_owned(),
                             can_retry: false,
                         });
                     }
                     NotifyError::InvalidTransaction(message) => {
-                        return Err(ObtainCycleError {
+                        return Err(ObtainCyclesError {
                             details: format!("Invalid top-up transaction: {message}"),
                             can_retry: false,
                         });
@@ -182,7 +182,7 @@ impl MintCycles {
                         error_message,
                     } => {
                         if retries_left == 0 {
-                            return Err(ObtainCycleError {
+                            return Err(ObtainCyclesError {
                                 details: format!(
                                     "Error notifying CMC about top-up: code={error_code}, message={error_message}"
                                 ),
@@ -197,31 +197,31 @@ impl MintCycles {
     }
 }
 
-pub struct WithdrawFromLedger {
+pub struct WithdrawFromCyclesLedger {
     pub ledger: Arc<dyn WithdrawableLedgerCanister>,
     pub from_subaccount: Option<account::Subaccount>,
 }
 
 #[async_trait]
-impl ObtainCycles for WithdrawFromLedger {
+impl ObtainCycles for WithdrawFromCyclesLedger {
     async fn obtain_cycles(
         &self,
         amount: u128,
         target_canister_id: Principal,
-    ) -> Result<u128, ObtainCycleError> {
+    ) -> Result<u128, ObtainCyclesError> {
         self.withdraw(amount, target_canister_id).await?;
         Ok(amount)
     }
 }
 
-impl WithdrawFromLedger {
+impl WithdrawFromCyclesLedger {
     /// # Errors
     /// Returns an error if the withdrawal fails.
     pub async fn withdraw(
         &self,
         amount: u128,
         to: Principal,
-    ) -> Result<BlockIndex, ObtainCycleError> {
+    ) -> Result<BlockIndex, ObtainCyclesError> {
         let call_result = self
             .ledger
             .withdraw(WithdrawArgs {
@@ -231,12 +231,12 @@ impl WithdrawFromLedger {
                 created_at_time: None,
             })
             .await
-            .map_err(|err| ObtainCycleError {
+            .map_err(|err| ObtainCyclesError {
                 details: format!("rejection_code: {:?}, err: {}", err.0, err.1),
                 can_retry: true,
             })?;
 
-        call_result.map_err(|err| ObtainCycleError {
+        call_result.map_err(|err| ObtainCyclesError {
             details: match &err {
                 WithdrawError::BadFee { expected_fee } => {
                     format!("Bad fee, expected: {expected_fee}")
@@ -367,7 +367,7 @@ mod test {
     async fn test_obtain_from_ledger() {
         let ledger = Arc::new(TestCyclesLedgerCanister::default());
 
-        let obtain = WithdrawFromLedger {
+        let obtain = WithdrawFromCyclesLedger {
             ledger: ledger.clone(),
             from_subaccount: None,
         };

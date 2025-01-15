@@ -1,6 +1,6 @@
 use candid::{self, CandidType, Deserialize, Nat, Principal};
 use canfund::api::ledger::CyclesLedgerCanister;
-use canfund::operations::obtain::WithdrawFromLedger;
+use canfund::operations::obtain::WithdrawFromCyclesLedger;
 use canfund::{
     manager::{
         options::{
@@ -102,7 +102,7 @@ pub const MAINNET_CYCLES_LEDGER_CANISTER_ID: Principal =
 // Default subaccount for minting cycles is derived from the canister's account.
 pub fn get_obtain_cycles_config() -> Option<ObtainCyclesOptions> {
     Some(ObtainCyclesOptions {
-        obtain_cycles: Arc::new(WithdrawFromLedger {
+        obtain_cycles: Arc::new(WithdrawFromCyclesLedger {
             ledger: Arc::new(CyclesLedgerCanister::new(MAINNET_CYCLES_LEDGER_CANISTER_ID)),
             from_subaccount: None,
         }),
