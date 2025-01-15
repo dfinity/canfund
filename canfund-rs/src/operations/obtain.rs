@@ -86,7 +86,7 @@ impl MintCycles {
 
     async fn transfer_icp_to_cmc(
         &self,
-        icp_amount: u128,
+        icp_amount_e8s: u128,
         target_canister_id: Principal,
     ) -> Result<u64, ObtainCycleError> {
         let call_result = self
