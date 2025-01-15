@@ -147,9 +147,10 @@ fund_manager.register(
 
 ### Obtaining Cycles
 
-`canfund` can also be configured to obtain cycles from an ICP account balance if your canister requires more cycles than it currently holds. This is achieved by interacting with the ICP Ledger and the Cycles Minting Canister (CMC).
+`canfund` can be configured to obtain cycles if your canister requires more cycles than it currently holds. This is achieved by interacting with the ICP Ledger and the Cycles Minting Canister (CMC) or by withdrawing cycles from the cycles ledger. Only one strategy can be set at a time.
 
-To enable this feature, you must provide the necessary configuration to allow `canfund` to mint cycles. This configuration can also be set for each registered canister to override the global configuration.
+#### Minting Cycles
+To enable minting cycles, you must provide the necessary configuration to allow `canfund` to mint cycles. This configuration can also be set for each registered canister to override the global configuration.
 
 ```rust,ignore
 let obtain_cycles_config = ObtainCyclesOptions {
@@ -166,6 +167,25 @@ funding_options.with_obtain_cycles_options(Some(obtain_cycles_config));
 ```
 
 With this configuration, `canfund` will periodically check the ICP balance and mint new cycles as needed to ensure that your canisters remain adequately funded.
+
+#### Withdrawing Cycles
+
+Alternatively, `canfund` can be configured to withdraw cycles from the cycles ledger. This is achieved by interacting with the Cycles Ledger using the `WithdrawFromCyclesLedger` struct.
+
+To enable this feature, you must provide the necessary configuration to allow `canfund` to withdraw cycles. This configuration can also be set for each registered canister to override the global configuration.
+
+```rust,ignore
+let obtain_cycles_config = ObtainCyclesOptions {
+    obtain_cycles: Arc::new(WithdrawFromCyclesLedger {
+        ledger: Arc::new(CyclesLedgerCanister::new(MAINNET_CYCLES_LEDGER_CANISTER_ID)),
+        from_subaccount: None,
+    }),
+};
+
+funding_options.with_obtain_cycles_options(Some(obtain_cycles_config));
+```
+
+With this configuration, canfund will periodically check the cycles balance and withdraw cycles as needed to ensure that your canisters remain adequately funded.
 
 ### Funding Callback
 
