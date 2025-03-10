@@ -22,6 +22,8 @@ pub struct CanisterRecord {
     strategy: Option<FundStrategy>,
     /// Optional minting strategy for the canister which overrides the global strategy.
     obtain_cycles_options: Option<ObtainCyclesOptions>,
+    /// Tracks the state of funding failures for the canister.
+    funding_failure: Option<FundingFailure>,
 }
 
 impl CanisterRecord {
@@ -40,6 +42,7 @@ impl CanisterRecord {
             cycles_fetcher,
             strategy,
             obtain_cycles_options,
+            funding_failure: None,
         }
     }
 
@@ -109,6 +112,21 @@ impl CanisterRecord {
     pub fn get_average_consumption(&self) -> u64 {
         self.consumption_history.average()
     }
+
+    pub fn get_funding_failure(&self) -> Option<&FundingFailure> {
+        self.funding_failure.as_ref()
+    }
+
+    pub fn set_funding_failure(&mut self, error_code: FundingErrorCode, timestamp: u64) {
+        self.funding_failure = Some(FundingFailure {
+            error_code,
+            timestamp,
+        });
+    }
+
+    pub fn reset_funding_failure(&mut self) {
+        self.funding_failure = None;
+    }
 }
 
 /// The canister cycles balance record.
@@ -124,6 +142,40 @@ impl CyclesBalance {
     /// Constructs a new CyclesBalance with the specified amount and timestamp.
     pub fn new(amount: u128, timestamp: u64) -> Self {
         Self { amount, timestamp }
+    }
+}
+
+/// The funding failure record.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct FundingFailure {
+    /// The code of the reason for the funding failure.
+    error_code: FundingErrorCode,
+    /// The timestamp of the failure.
+    timestamp: u64,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub enum FundingErrorCode {
+    #[default]
+    InsufficientCycles, // Funding canister has insufficient cycles
+    DepositFailed,      // The deposit of cycles failed
+    MintingFailed,      // Minting cycles from ICP failed
+    BalanceCheckFailed, // Fetching cycles balance failed
+    Other(String),      // Other errors with a custom message
+}
+
+impl FundingErrorCode {
+    /// Returns a human-readable error message for the error code.
+    pub fn message(&self) -> String {
+        match self {
+            FundingErrorCode::InsufficientCycles => {
+                "Insufficient cycles in the funding canister.".to_string()
+            }
+            FundingErrorCode::DepositFailed => "The deposit of cycles failed.".to_string(),
+            FundingErrorCode::MintingFailed => "Minting cycles from ICP failed.".to_string(),
+            FundingErrorCode::BalanceCheckFailed => "Fetching cycles balance failed.".to_string(),
+            FundingErrorCode::Other(msg) => msg.clone(),
+        }
     }
 }
 
