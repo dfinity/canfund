@@ -201,6 +201,11 @@ let funding_config = FundManagerOptions::new()
 ); 
 ```
 
+Funding callback can also be used to handle funding failures. For example, if the funding canister does not have enough cycles to fund the target canister, the callback can be used to notify the user or trigger a different action.
+
+Funding failures can be accessed through the `canister_records` parameter, which contains an optional `funding_failure` enum field. This field will be `Some` if the latest funding operation failed, and `None` otherwise.
+
+
 
 ### Initialization
 
