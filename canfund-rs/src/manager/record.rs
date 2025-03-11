@@ -149,9 +149,9 @@ impl CyclesBalance {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct FundingFailure {
     /// The code of the reason for the funding failure.
-    error_code: FundingErrorCode,
+    pub error_code: FundingErrorCode,
     /// The timestamp of the failure.
-    timestamp: u64,
+    pub timestamp: u64,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -241,5 +241,28 @@ mod tests {
         canister_record.set_cycles(CyclesBalance::new(200_000, 7_000_000_000));
 
         assert_eq!(canister_record.get_average_consumption(), 110_000);
+    }
+
+    #[test]
+    fn test_set_funding_failure() {
+        let mut record = CanisterRecord::new(
+            Arc::new(FetchCyclesBalanceFromCanisterStatus::new()),
+            None,
+            None,
+            0,
+        );
+
+        // Initially, there should be no funding failure
+        assert!(record.get_funding_failure().is_none());
+
+        // Set a funding failure
+        let error_code = FundingErrorCode::DepositFailed;
+        let timestamp = 123456789;
+        record.set_funding_failure(error_code.clone(), timestamp);
+
+        // Check if the funding failure is set correctly
+        let failure = record.get_funding_failure().unwrap();
+        assert_eq!(failure.error_code, error_code);
+        assert_eq!(failure.timestamp, timestamp);
     }
 }
