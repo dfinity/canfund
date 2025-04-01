@@ -172,7 +172,9 @@ impl FundingErrorCode {
                 "Insufficient cycles in the funding canister.".to_string()
             }
             FundingErrorCode::DepositFailed => "The deposit of cycles failed.".to_string(),
-            FundingErrorCode::ObtainCyclesFailed => "Obtaining cycles for the canister failed.".to_string(),
+            FundingErrorCode::ObtainCyclesFailed => {
+                "Obtaining cycles for the canister failed.".to_string()
+            }
             FundingErrorCode::BalanceCheckFailed => "Fetching cycles balance failed.".to_string(),
             FundingErrorCode::Other(msg) => msg.clone(),
         }
