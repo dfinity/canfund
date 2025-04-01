@@ -159,7 +159,7 @@ pub enum FundingErrorCode {
     #[default]
     InsufficientCycles, // Funding canister has insufficient cycles
     DepositFailed,      // The deposit of cycles failed
-    MintingFailed,      // Minting cycles from ICP failed
+    ObtainCyclesFailed, // Minting cycles from ICP failed
     BalanceCheckFailed, // Fetching cycles balance failed
     Other(String),      // Other errors with a custom message
 }
@@ -172,7 +172,7 @@ impl FundingErrorCode {
                 "Insufficient cycles in the funding canister.".to_string()
             }
             FundingErrorCode::DepositFailed => "The deposit of cycles failed.".to_string(),
-            FundingErrorCode::MintingFailed => "Minting cycles from ICP failed.".to_string(),
+            FundingErrorCode::ObtainCyclesFailed => "Obtaining cycles for the canister failed.".to_string(),
             FundingErrorCode::BalanceCheckFailed => "Fetching cycles balance failed.".to_string(),
             FundingErrorCode::Other(msg) => msg.clone(),
         }

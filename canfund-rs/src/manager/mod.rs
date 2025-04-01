@@ -328,7 +328,7 @@ impl FundManager {
                                         manager.borrow_mut().canisters.get_mut(&canister_id)
                                     {
                                         record.set_funding_failure(
-                                            FundingErrorCode::MintingFailed,
+                                            FundingErrorCode::ObtainCyclesFailed,
                                             time(),
                                         );
                                     }
