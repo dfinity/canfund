@@ -159,7 +159,7 @@ pub enum FundingErrorCode {
     #[default]
     InsufficientCycles, // Funding canister has insufficient cycles
     DepositFailed,      // The deposit of cycles failed
-    ObtainCyclesFailed, // Minting cycles from ICP failed
+    ObtainCyclesFailed, // Obtaining cycles failed
     BalanceCheckFailed, // Fetching cycles balance failed
     Other(String),      // Other errors with a custom message
 }
