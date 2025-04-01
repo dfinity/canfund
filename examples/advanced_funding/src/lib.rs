@@ -64,6 +64,10 @@ pub fn start_canister_cycles_monitoring(config: FundingConfig) {
                     ic_cdk::print(format!(
                         "Canister {canister_id} had {cycles} cycles and got {deposited_cycles} deposited cycles"
                     ));
+                    let error = record.get_funding_failure().map_or("None".to_string(), |f| f.error_code.message());
+                    ic_cdk::print(format!(
+                        "Funding error: {error}"
+                    ));
                 }
             }));
 

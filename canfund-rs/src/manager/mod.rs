@@ -6,6 +6,7 @@ use self::{
     record::{CanisterRecord, CyclesBalance},
 };
 use crate::manager::options::ObtainCyclesOptions;
+use crate::manager::record::FundingErrorCode;
 use crate::operations::fetch::{FetchCyclesBalance, FetchCyclesBalanceFromCanisterStatus};
 use ic_cdk::{
     api::{
@@ -174,9 +175,10 @@ impl FundManager {
     /// Creates a timer to track the canisters and fund them based on the configuration.
     fn create_tracker(manager: Rc<RefCell<FundManagerCore>>, interval: Duration) -> TimerId {
         let start_immediately = {
-            match interval.is_zero() {
-                true => false,
-                false => !manager.borrow().options.delayed_start(),
+            if interval.is_zero() {
+                false
+            } else {
+                !manager.borrow().options.delayed_start()
             }
         };
 
@@ -215,6 +217,11 @@ impl FundManager {
         if _lock.is_none() {
             print("Failed to acquire lock for `execute_scheduled_monitoring`, another process is running");
             return;
+        }
+
+        // Reset funding failure for all canister records
+        for record in manager.borrow_mut().canisters.values_mut() {
+            record.reset_funding_failure();
         }
 
         let (all_canister_ids, chunk_size) = {
@@ -317,6 +324,13 @@ impl FundManager {
                                     if error.can_retry {
                                         print("Retrying to obtain cycles...");
                                         continue;
+                                    } else if let Some(record) =
+                                        manager.borrow_mut().canisters.get_mut(&canister_id)
+                                    {
+                                        record.set_funding_failure(
+                                            FundingErrorCode::ObtainCyclesFailed,
+                                            time(),
+                                        );
                                     }
                                     break;
                                 }
@@ -328,6 +342,11 @@ impl FundManager {
                         }
 
                         print("WARNING: No top-up method configured for topping up the funding canister. Consider configuring `obtain_cycles_options`.");
+
+                        if let Some(record) = manager.borrow_mut().canisters.get_mut(&canister_id) {
+                            record
+                                .set_funding_failure(FundingErrorCode::InsufficientCycles, time());
+                        }
                     }
                 } else {
                     match deposit_cycles(CanisterIdRecord { canister_id }, needed_cycles).await {
@@ -339,8 +358,20 @@ impl FundManager {
                                 err_code,
                                 err_msg
                             ));
+
+                            if let Some(record) =
+                                manager.borrow_mut().canisters.get_mut(&canister_id)
+                            {
+                                record.set_funding_failure(FundingErrorCode::DepositFailed, time());
+                            }
                         }
                         Ok(_) => {
+                            print(format!(
+                                "Funded canister {} with {} cycles",
+                                canister_id.to_text(),
+                                needed_cycles
+                            ));
+
                             if let Some(record) =
                                 manager.borrow_mut().canisters.get_mut(&canister_id)
                             {
@@ -349,12 +380,6 @@ impl FundManager {
                                     time(),
                                 ));
                             }
-
-                            print(format!(
-                                "Funded canister {} with {} cycles",
-                                canister_id.to_text(),
-                                needed_cycles
-                            ));
                         }
                     }
                 }
@@ -411,6 +436,10 @@ impl FundManager {
                         canister_id.to_text(),
                         error
                     ));
+
+                    if let Some(record) = manager.borrow_mut().canisters.get_mut(canister_id) {
+                        record.set_funding_failure(FundingErrorCode::BalanceCheckFailed, time());
+                    }
                 }
             }
         }
