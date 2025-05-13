@@ -309,7 +309,6 @@ impl FundManager {
                                             cycles_obtained,
                                             canister_id.to_text()
                                         ));
-
                                     } else {
                                         print(format!(
                                             "Warning: Obtained {} cycles but canister {} not found in records",
