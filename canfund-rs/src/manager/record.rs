@@ -52,7 +52,8 @@ impl CanisterRecord {
             // Timestamp difference is in nanoseconds, so we need to multiply by 1_000_000_000 to get cycles per second.
             self.consumption_history.add_sample(
                 (previous_cycles.amount.saturating_sub(cycles.amount) * 1_000_000_000
-                    / cycles.timestamp.saturating_sub(previous_cycles.timestamp) as u128) as u64,
+                    / cycles.timestamp.saturating_sub(previous_cycles.timestamp) as u128)
+                    as u64,
             );
         }
 
