@@ -241,14 +241,14 @@ impl FundManager {
             let canisters_to_fund =
                 Self::monitor_specified_canisters(Rc::clone(&manager), canister_ids).await;
 
-            // Funds the canisters with the needed cycles.
+            // Funds the canisters with the necessary cycles.
             for (canister_id, needed_cycles) in canisters_to_fund {
                 // Before transferring cycles from the funding canister, check if the funding canister actually has enough cycles.
                 let funding_canister_needs_cycles = canister_id != id() && {
                     // Get the current balance.
                     let funding_canister_balance = ic_cdk::api::canister_balance128();
 
-                    // Get the record of the funding canister, if it exists, to access the previous cycles balance to calculate estimated runtime left.
+                    // Get the record of the funding canister if it exists, to access the previous cycles balance to calculate estimated runtime left.
                     let maybe_funding_canister_record =
                         manager.borrow().canisters.get(&id()).cloned();
 
@@ -304,13 +304,18 @@ impl FundManager {
                                             cycles_obtained,
                                             time(),
                                         ));
+                                        print(format!(
+                                            "Successfully obtained {} cycles for canister {}",
+                                            cycles_obtained,
+                                            canister_id.to_text()
+                                        ));
+                                    } else {
+                                        print(format!(
+                                            "Warning: Obtained {} cycles but canister {} not found in records",
+                                            cycles_obtained,
+                                            canister_id.to_text()
+                                        ));
                                     }
-
-                                    print(format!(
-                                        "Obtained {} cycles for canister {}",
-                                        cycles_obtained,
-                                        canister_id.to_text()
-                                    ));
                                     break;
                                 }
                                 Err(error) => {
@@ -321,7 +326,7 @@ impl FundManager {
                                         error.details
                                     ));
 
-                                    if error.can_retry {
+                                    if error.can_retry && tries_left > 0 {
                                         print("Retrying to obtain cycles...");
                                         continue;
                                     } else if let Some(record) =
