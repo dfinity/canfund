@@ -34,7 +34,7 @@ jobs:
       - name: 'Checkout'
         uses: actions/checkout@v4
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.4
+        uses: mozilla-actions/sccache-action@v0.0.9
       - name: 'Test cargo crates'
         run: cargo test --locked --workspace --exclude integration-tests
   integration-tests:
@@ -44,6 +44,6 @@ jobs:
       - name: 'Checkout'
         uses: actions/checkout@v4
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.4
+        uses: mozilla-actions/sccache-action@v0.0.9
       - name: 'Test cargo crates'
         run: cargo test --locked -p integration-tests
