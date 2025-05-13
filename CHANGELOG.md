@@ -1,3 +1,10 @@
+## 0.8.3 (2025-05-13)
+
+### Fix
+
+- overflow when computing cycles consumption (#51)
+- deposit retry logic (#50)
+
 ## 0.8.2 (2025-04-14)
 
 ### Fix
