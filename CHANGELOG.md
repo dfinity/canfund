@@ -2,7 +2,6 @@
 
 ### Fix
 
-- bump pocket-ic (sec)
 - overflow when computing cycles consumption (#51)
 - deposit retry logic (#50)
 
