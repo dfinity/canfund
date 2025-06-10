@@ -72,7 +72,9 @@ pub fn setup_new_env() -> TestEnv {
     // live mode would set the time back to the current time.
     // Therefore, if we want to use live mode, we need to start the tests with the time
     // set to the past.
-    env.set_time(Time::from(SystemTime::now() - Duration::from_secs(24 * 60 * 60)));
+    env.set_time(Time::from(
+        SystemTime::now() - Duration::from_secs(24 * 60 * 60),
+    ));
     let controller = controller_test_id();
     let minter = minter_test_id();
     let canister_ids = install_canisters(&env, controller, minter);

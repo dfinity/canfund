@@ -12,12 +12,12 @@ use canfund::{
     operations::fetch::FetchCyclesBalanceFromCanisterStatus,
     FundManager,
 };
+use ic_cdk::api::canister_self;
 use ic_cdk::query;
 use ic_cdk_macros::{init, post_upgrade, update};
 use icrc_ledger_types::icrc1::account::Account;
 use icrc_ledger_types::icrc1::transfer::Memo;
 use std::{cell::RefCell, sync::Arc};
-use ic_cdk::api::canister_self;
 
 thread_local! {
     /// Monitor the cycles of canisters and top up if necessary.
@@ -151,10 +151,12 @@ async fn deposit(arg: DepositArg) -> DepositResult {
     };
 
     let cycles = arg.cycles;
-    
-    ic_cdk::call::Call::unbounded_wait(
-        MAINNET_CYCLES_LEDGER_CANISTER_ID,
-        "deposit").with_arg(call_arg).with_cycles(cycles)
-    .await
-    .expect("deposit call failed").candid().expect("failed to decode deposit result")
+
+    ic_cdk::call::Call::unbounded_wait(MAINNET_CYCLES_LEDGER_CANISTER_ID, "deposit")
+        .with_arg(call_arg)
+        .with_cycles(cycles)
+        .await
+        .expect("deposit call failed")
+        .candid()
+        .expect("failed to decode deposit result")
 }

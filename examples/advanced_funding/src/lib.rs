@@ -13,8 +13,8 @@ use canfund::{
     operations::{fetch::FetchCyclesBalanceFromCanisterStatus, obtain::MintCycles},
     FundManager,
 };
-use ic_cdk::query;
 use ic_cdk::api::{canister_self, debug_print};
+use ic_cdk::query;
 use ic_cdk_macros::{init, post_upgrade};
 use ic_ledger_types::{
     DEFAULT_SUBACCOUNT, MAINNET_CYCLES_MINTING_CANISTER_ID, MAINNET_LEDGER_CANISTER_ID,
