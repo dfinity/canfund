@@ -70,10 +70,7 @@ impl MintCycles {
             .get_icp_xdr()
             .await
             .map_err(|err| ObtainCyclesError {
-                details: format!(
-                    "Error getting ICP/XDR price from CMC: code={:?}, message={}",
-                    err.0, err.1
-                ),
+                details: format!("Error getting ICP/XDR price from CMC: message={}", err),
                 can_retry: true,
             })
     }
@@ -101,10 +98,7 @@ impl MintCycles {
             })
             .await
             .map_err(|err| ObtainCyclesError {
-                details: format!(
-                    "Error transferring ICP to CMC account: code={:?}, message={}",
-                    err.0, err.1
-                ),
+                details: format!("Error transferring ICP to CMC account: message={}", err),
                 can_retry: true,
             })?;
 
@@ -132,10 +126,7 @@ impl MintCycles {
                 Err(err) => {
                     if retries_left == 0 {
                         return Err(ObtainCyclesError {
-                            details: format!(
-                                "Error notifying CMC about top-up: code={:?}, message={}",
-                                err.0, err.1
-                            ),
+                            details: format!("Error notifying CMC about top-up: message={}", err),
                             can_retry: false,
                         });
                     } else {
@@ -232,7 +223,7 @@ impl WithdrawFromCyclesLedger {
             })
             .await
             .map_err(|err| ObtainCyclesError {
-                details: format!("rejection_code: {:?}, err: {}", err.0, err.1),
+                details: format!("error: {}", err),
                 can_retry: true,
             })?;
 
@@ -278,12 +269,11 @@ impl WithdrawFromCyclesLedger {
 
 #[cfg(test)]
 mod test {
-    use candid::Nat;
-    use ic_cdk::api::call::RejectionCode;
-
     use super::*;
     use crate::api::ledger::test::TestCyclesLedgerCanister;
     use crate::api::{cmc::test::TestCmcCanister, ledger::test::TestLedgerCanister};
+    use candid::Nat;
+    use ic_cdk::call::Error;
 
     #[tokio::test]
     async fn test_obtain_by_minting() {
@@ -314,7 +304,15 @@ mod test {
     #[tokio::test]
     async fn test_cycle_minting_notify_retries() {
         let notify_return_values_retried = vec![
-            (Err((RejectionCode::SysFatal, "error".to_string())), true),
+            (
+                Err(Error::InsufficientLiquidCycleBalance(
+                    ic_cdk::call::InsufficientLiquidCycleBalance {
+                        available: 0,
+                        required: 100,
+                    },
+                )),
+                true,
+            ),
             (Ok(NotifyTopUpResult::Err(NotifyError::Processing)), true),
             (
                 Ok(NotifyTopUpResult::Err(NotifyError::Other {
@@ -352,7 +350,7 @@ mod test {
                 .expect_err("obtain_cycles should fail");
 
             // transfer was called only once
-            assert!(ledger.transfer_called_with.read().await.len() == 1);
+            assert_eq!(ledger.transfer_called_with.read().await.len(), 1);
 
             if test.1 {
                 // notify was retried

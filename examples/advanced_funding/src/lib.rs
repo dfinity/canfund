@@ -13,7 +13,8 @@ use canfund::{
     operations::{fetch::FetchCyclesBalanceFromCanisterStatus, obtain::MintCycles},
     FundManager,
 };
-use ic_cdk::{id, query};
+use ic_cdk::query;
+use ic_cdk::api::{canister_self, debug_print};
 use ic_cdk_macros::{init, post_upgrade};
 use ic_ledger_types::{
     DEFAULT_SUBACCOUNT, MAINNET_CYCLES_MINTING_CANISTER_ID, MAINNET_LEDGER_CANISTER_ID,
@@ -61,11 +62,11 @@ pub fn start_canister_cycles_monitoring(config: FundingConfig) {
                         .get_deposited_cycles()
                         .as_ref()
                         .map_or(0, |c| c.amount);
-                    ic_cdk::print(format!(
+                    debug_print(format!(
                         "Canister {canister_id} had {cycles} cycles and got {deposited_cycles} deposited cycles"
                     ));
                     let error = record.get_funding_failure().map_or("None".to_string(), |f| f.error_code.message());
-                    ic_cdk::print(format!(
+                    debug_print(format!(
                         "Funding error: {error}"
                     ));
                 }
@@ -87,7 +88,7 @@ pub fn start_canister_cycles_monitoring(config: FundingConfig) {
 
         // The funding canister itself can also be monitored.
         fund_manager.register(
-            id(),
+            canister_self(),
             RegisterOpts::new()
                 .with_cycles_fetcher(Arc::new(FetchCyclesBalanceFromCanisterStatus::new()))
                 .with_strategy(FundStrategy::BelowThreshold(

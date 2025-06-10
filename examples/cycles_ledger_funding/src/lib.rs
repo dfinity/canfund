@@ -12,12 +12,12 @@ use canfund::{
     operations::fetch::FetchCyclesBalanceFromCanisterStatus,
     FundManager,
 };
-use ic_cdk::api::call::call_with_payment128;
-use ic_cdk::{id, query};
+use ic_cdk::query;
 use ic_cdk_macros::{init, post_upgrade, update};
 use icrc_ledger_types::icrc1::account::Account;
 use icrc_ledger_types::icrc1::transfer::Memo;
 use std::{cell::RefCell, sync::Arc};
+use ic_cdk::api::canister_self;
 
 thread_local! {
     /// Monitor the cycles of canisters and top up if necessary.
@@ -83,7 +83,7 @@ pub fn start_canister_cycles_monitoring(config: FundingConfig) {
 
         // The funding canister itself can also be monitored.
         fund_manager.register(
-            id(),
+            canister_self(),
             RegisterOpts::new()
                 .with_cycles_fetcher(Arc::new(FetchCyclesBalanceFromCanisterStatus::new()))
                 .with_strategy(FundStrategy::BelowThreshold(
@@ -151,13 +151,10 @@ async fn deposit(arg: DepositArg) -> DepositResult {
     };
 
     let cycles = arg.cycles;
-    let (result,): (DepositResult,) = call_with_payment128(
+    
+    ic_cdk::call::Call::unbounded_wait(
         MAINNET_CYCLES_LEDGER_CANISTER_ID,
-        "deposit",
-        (call_arg,),
-        cycles,
-    )
+        "deposit").with_arg(call_arg).with_cycles(cycles)
     .await
-    .expect("deposit call failed");
-    result
+    .expect("deposit call failed").candid().expect("failed to decode deposit result")
 }

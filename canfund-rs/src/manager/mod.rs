@@ -8,12 +8,12 @@ use self::{
 use crate::manager::options::ObtainCyclesOptions;
 use crate::manager::record::FundingErrorCode;
 use crate::operations::fetch::{FetchCyclesBalance, FetchCyclesBalanceFromCanisterStatus};
+use ic_cdk::api::{canister_self, debug_print};
+use ic_cdk::management_canister::DepositCyclesArgs;
 use ic_cdk::{
-    api::{
-        management_canister::main::{deposit_cycles, CanisterId, CanisterIdRecord},
-        time,
-    },
-    id, print, spawn,
+    api::time,
+    futures::spawn,
+    management_canister::{deposit_cycles, CanisterId},
 };
 use ic_cdk_timers::TimerId;
 use std::{
@@ -215,7 +215,7 @@ impl FundManager {
         };
 
         if _lock.is_none() {
-            print("Failed to acquire lock for `execute_scheduled_monitoring`, another process is running");
+            debug_print("Failed to acquire lock for `execute_scheduled_monitoring`, another process is running");
             return;
         }
 
@@ -244,13 +244,13 @@ impl FundManager {
             // Funds the canisters with the necessary cycles.
             for (canister_id, needed_cycles) in canisters_to_fund {
                 // Before transferring cycles from the funding canister, check if the funding canister actually has enough cycles.
-                let funding_canister_needs_cycles = canister_id != id() && {
+                let funding_canister_needs_cycles = canister_id != canister_self() && {
                     // Get the current balance.
-                    let funding_canister_balance = ic_cdk::api::canister_balance128();
+                    let funding_canister_balance = ic_cdk::api::canister_cycle_balance();
 
                     // Get the record of the funding canister if it exists, to access the previous cycles balance to calculate estimated runtime left.
                     let maybe_funding_canister_record =
-                        manager.borrow().canisters.get(&id()).cloned();
+                        manager.borrow().canisters.get(&canister_self()).cloned();
 
                     // see if transferring cycles to the canister will make the funding canister run low of cycles
                     let funding_canister_needed_cycles = calc_needed_cycles(
@@ -273,7 +273,7 @@ impl FundManager {
                 // If either the funding canister is low on cycles,
                 // or it does not have enough cycles to fund another canister,
                 // then need to obtain cycles for the funding canister.
-                if canister_id == id() || funding_canister_needs_cycles {
+                if canister_id == canister_self() || funding_canister_needs_cycles {
                     let maybe_obtain_cycles = manager
                         .borrow()
                         .canisters
@@ -304,13 +304,13 @@ impl FundManager {
                                             cycles_obtained,
                                             time(),
                                         ));
-                                        print(format!(
+                                        debug_print(format!(
                                             "Successfully obtained {} cycles for canister {}",
                                             cycles_obtained,
                                             canister_id.to_text()
                                         ));
                                     } else {
-                                        print(format!(
+                                        debug_print(format!(
                                             "Warning: Obtained {} cycles but canister {} not found in records",
                                             cycles_obtained,
                                             canister_id.to_text()
@@ -319,7 +319,7 @@ impl FundManager {
                                     break;
                                 }
                                 Err(error) => {
-                                    print(format!(
+                                    debug_print(format!(
                                         "Failed to obtain {} cycles for canister {}, err: {}",
                                         needed_cycles,
                                         canister_id.to_text(),
@@ -327,7 +327,7 @@ impl FundManager {
                                     ));
 
                                     if error.can_retry && tries_left > 0 {
-                                        print("Retrying to obtain cycles...");
+                                        debug_print("Retrying to obtain cycles...");
                                         continue;
                                     } else if let Some(record) =
                                         manager.borrow_mut().canisters.get_mut(&canister_id)
@@ -343,10 +343,10 @@ impl FundManager {
                         }
                     } else {
                         if funding_canister_needs_cycles {
-                            print(format!("WARNING: Could not top up canister {}. Funding canister is low on cycles.", canister_id.to_text()));
+                            debug_print(format!("WARNING: Could not top up canister {}. Funding canister is low on cycles.", canister_id.to_text()));
                         }
 
-                        print("WARNING: No top-up method configured for topping up the funding canister. Consider configuring `obtain_cycles_options`.");
+                        debug_print("WARNING: No top-up method configured for topping up the funding canister. Consider configuring `obtain_cycles_options`.");
 
                         if let Some(record) = manager.borrow_mut().canisters.get_mut(&canister_id) {
                             record
@@ -354,14 +354,13 @@ impl FundManager {
                         }
                     }
                 } else {
-                    match deposit_cycles(CanisterIdRecord { canister_id }, needed_cycles).await {
-                        Err((err_code, err_msg)) => {
-                            print(format!(
-                                "Failed to fund canister {} with {} cycles, code: {:?} and reason: {:?}",
+                    match deposit_cycles(&DepositCyclesArgs { canister_id }, needed_cycles).await {
+                        Err(err) => {
+                            debug_print(format!(
+                                "Failed to fund canister {} with {} cycles, error: {}",
                                 canister_id.to_text(),
                                 needed_cycles,
-                                err_code,
-                                err_msg
+                                err,
                             ));
 
                             if let Some(record) =
@@ -371,7 +370,7 @@ impl FundManager {
                             }
                         }
                         Ok(_) => {
-                            print(format!(
+                            debug_print(format!(
                                 "Funded canister {} with {} cycles",
                                 canister_id.to_text(),
                                 needed_cycles
@@ -436,7 +435,7 @@ impl FundManager {
                     }
                 }
                 Err(error) => {
-                    print(format!(
+                    debug_print(format!(
                         "Failed to fetch cycles balance for canister {}, err: {:?}",
                         canister_id.to_text(),
                         error

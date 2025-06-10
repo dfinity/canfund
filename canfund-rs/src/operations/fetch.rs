@@ -4,13 +4,8 @@ use crate::{
     utils::{cycles_nat_to_u128, cycles_str_to_u128},
 };
 use candid::Principal;
-use ic_cdk::{
-    api::{
-        call::RejectionCode,
-        management_canister::main::{CanisterId, CanisterIdRecord, CanisterStatusResponse},
-    },
-    call,
-};
+use ic_cdk::call::{Call, RejectCode};
+use ic_cdk::management_canister::{CanisterId, CanisterStatusArgs, CanisterStatusResult};
 
 /// The trait for fetching the canister cycles balance.
 #[async_trait::async_trait]
@@ -56,19 +51,23 @@ impl Default for FetchCyclesBalanceFromCanisterStatus {
 #[async_trait::async_trait]
 impl FetchCyclesBalance for FetchCyclesBalanceFromCanisterStatus {
     async fn fetch_cycles_balance(&self, canister_id: CanisterId) -> Result<u128, Error> {
-        let response = call::<(CanisterIdRecord,), (CanisterStatusResponse,)>(
-            self.canister,
-            &self.method,
-            (CanisterIdRecord { canister_id },),
-        );
+        let response = Call::unbounded_wait(self.canister, &self.method)
+            .with_arg(&CanisterStatusArgs { canister_id });
 
         match response.await {
-            Ok((CanisterStatusResponse {
-                cycles,
-                settings,
-                idle_cycles_burned_per_day,
-                ..
-            },)) => {
+            Ok(response) => {
+                let CanisterStatusResult {
+                    cycles,
+                    settings,
+                    idle_cycles_burned_per_day,
+                    ..
+                } = response
+                    .candid()
+                    .map_err(|e| Error::GetCanisterCycleBalanceFailed {
+                        rejection_code: RejectCode::CanisterError,
+                        rejection_message: e.to_string(),
+                    })?;
+
                 // We want to consider cycle balance relative to the freezing threshold balance.
                 cycles_nat_to_u128(cycles).map(|cycles| {
                     cycles.saturating_sub(calc_freezing_balance(
@@ -77,24 +76,20 @@ impl FetchCyclesBalance for FetchCyclesBalanceFromCanisterStatus {
                     ))
                 })
             }
-            Err((RejectionCode::CanisterError, err_msg)) => {
+            Err(error) => {
                 // If the canister run out of cycles, we return zero cycles since the canister is frozen.
                 //
                 // Out of cycles error message is taken from:
                 // https://github.com/dfinity/ic/blob/b0039508c4f39aa69f3f32e4969e6bf1996fe10b/rs/interfaces/src/execution_environment/errors.rs#L61
-                if err_msg.to_lowercase().contains("out of cycles") {
+                if error.to_string().to_lowercase().contains("out of cycles") {
                     return Ok(0);
                 }
 
                 Err(Error::GetCanisterCycleBalanceFailed {
-                    rejection_code: RejectionCode::CanisterError,
-                    rejection_message: err_msg,
+                    rejection_code: RejectCode::CanisterError,
+                    rejection_message: error.to_string(),
                 })
             }
-            Err((err_code, err_msg)) => Err(Error::GetCanisterCycleBalanceFailed {
-                rejection_code: err_code,
-                rejection_message: err_msg,
-            }),
         }
     }
 }
@@ -149,26 +144,31 @@ impl FetchCyclesBalanceFromPrometheusMetrics {
 impl FetchCyclesBalance for FetchCyclesBalanceFromPrometheusMetrics {
     async fn fetch_cycles_balance(&self, canister_id: CanisterId) -> Result<u128, Error> {
         // Send the HTTP request to fetch the prometheus metrics.
-        let response: Result<(HttpResponse,), _> = call(
-            canister_id,
-            "http_request",
-            (HttpRequest {
+        let response: Result<HttpResponse, _> = Call::unbounded_wait(canister_id, "http_request")
+            .with_arg(HttpRequest {
                 method: "GET".to_string(),
                 url: self.path.clone(),
                 headers: vec![],
                 body: vec![],
-            },),
-        )
-        .await;
+            })
+            .await
+            .map_err(|e| Error::MetricsHttpRequestFailed {
+                code: RejectCode::CanisterError,
+                reason: e.to_string(),
+            })?
+            .candid();
 
         match response {
-            Err((code, reason)) => Err(Error::MetricsHttpRequestFailed { code, reason }),
-            Ok((HttpResponse {
+            Err(error) => Err(Error::MetricsHttpRequestFailed {
+                code: RejectCode::CanisterError,
+                reason: error.to_string(),
+            }),
+            Ok(HttpResponse {
                 status_code, body, ..
-            },)) => {
+            }) => {
                 if status_code != 200 {
                     return Err(Error::MetricsHttpRequestFailed {
-                        code: RejectionCode::CanisterError,
+                        code: RejectCode::CanisterError,
                         reason: format!(
                             "HTTP code unexpected {}: {}",
                             status_code,
@@ -217,9 +217,9 @@ fn extract_cycles_from_http_response_body(body: &str, metric_name: &str) -> Resu
 
 fn calc_freezing_balance(freezing_threshold: u128, idle_cycles_burned_per_day: u128) -> u128 {
     // u128 should safely handle the multiplication without overflow and provides enough precision for the division result.
-    // e.g.
+    // e.g.:
     //  freezing threshold for 100 years ~ 3 * 10^9
-    //  idle cycles burned per day with 1 TB of storage  = 844 * 10^9
+    //  idle cycles burned per day with 1 TB of storage = 844 * 10^9
     //  u128 limit ~ 3 * 10^38
     idle_cycles_burned_per_day * freezing_threshold / 86_400
 }

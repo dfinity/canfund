@@ -1,7 +1,7 @@
 use crate::types::{WithdrawArgs, WithdrawError};
 use async_trait::async_trait;
 use candid::Principal;
-use ic_cdk::api::call::CallResult;
+use ic_cdk::call::CallResult;
 use ic_ledger_types::{transfer, TransferArgs, TransferResult};
 use icrc_ledger_types::icrc1::transfer::BlockIndex;
 
@@ -23,7 +23,7 @@ impl IcLedgerCanister {
 #[async_trait]
 impl LedgerCanister for IcLedgerCanister {
     async fn transfer(&self, args: TransferArgs) -> CallResult<TransferResult> {
-        transfer(self.canister_id, args).await
+        transfer(self.canister_id, &args).await
     }
 }
 
@@ -45,14 +45,12 @@ impl CyclesLedgerCanister {
 #[async_trait]
 impl WithdrawableLedgerCanister for CyclesLedgerCanister {
     async fn withdraw(&self, args: WithdrawArgs) -> CallResult<Result<BlockIndex, WithdrawError>> {
-        let (result,) = ic_cdk::call::<(WithdrawArgs,), (Result<BlockIndex, WithdrawError>,)>(
-            self.canister_id,
-            "withdraw",
-            (args,),
+        Ok(
+            ic_cdk::call::Call::unbounded_wait(self.canister_id, "withdraw")
+                .with_arg(args)
+                .await?
+                .candid()?,
         )
-        .await?;
-
-        Ok(result)
     }
 }
 

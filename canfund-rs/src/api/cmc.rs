@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use candid::{CandidType, Principal};
-use ic_cdk::api::call::CallResult;
+use ic_cdk::call::CallResult;
 use ic_ledger_types::{AccountIdentifier, Subaccount};
 use serde::Deserialize;
 
@@ -69,13 +69,11 @@ impl IcCyclesMintingCanister {
 #[async_trait]
 impl CyclesMintingCanister for IcCyclesMintingCanister {
     async fn get_icp_xdr(&self) -> CallResult<GetIcpXdrResult> {
-        ic_cdk::call::<(), (GetIcpXdrResult,)>(
-            self.cmc_canister_id,
-            "get_icp_xdr_conversion_rate",
-            (),
+        Ok(
+            ic_cdk::call::Call::unbounded_wait(self.cmc_canister_id, "get_icp_xdr_conversion_rate")
+                .await?
+                .candid()?,
         )
-        .await
-        .map(|result| result.0)
     }
 
     async fn notify_top_up(
@@ -83,17 +81,15 @@ impl CyclesMintingCanister for IcCyclesMintingCanister {
         block_index: u64,
         canister_id: Principal,
     ) -> CallResult<NotifyTopUpResult> {
-        let result: (NotifyTopUpResult,) = ic_cdk::call(
-            self.cmc_canister_id,
-            "notify_top_up",
-            (NotifyTopUpArg {
-                block_index,
-                canister_id,
-            },),
+        Ok(
+            ic_cdk::call::Call::unbounded_wait(self.cmc_canister_id, "notify_top_up")
+                .with_arg(NotifyTopUpArg {
+                    block_index,
+                    canister_id,
+                })
+                .await?
+                .candid()?,
         )
-        .await?;
-
-        Ok(result.0)
     }
 
     fn get_top_up_address(&self, target_canister_id: Principal) -> AccountIdentifier {
