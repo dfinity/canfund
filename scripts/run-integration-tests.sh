@@ -33,4 +33,4 @@ chmod +x pocket-ic
 echo "PocketIC download completed"
 cd ../..
 
-cargo test --package integration-tests $TESTNAME -- --test-threads $TEST_THREADS --nocapture
+cargo test --locked --package integration-tests $TESTNAME -- --test-threads $TEST_THREADS --nocapture
