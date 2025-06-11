@@ -1,3 +1,9 @@
+## 0.8.4 (2025-06-11)
+
+### Refactor
+
+- update ic_cdk to v0.18, integration tests script (#53)
+
 ## 0.8.3 (2025-05-13)
 
 ### Fix
