@@ -1,5 +1,4 @@
 use candid::{CandidType, Deserialize, Nat, Principal};
-use ic_cdk::api::call::RejectionCode;
 use icrc_ledger_types::icrc1::account::Subaccount;
 use icrc_ledger_types::icrc1::transfer::BlockIndex;
 
@@ -51,7 +50,7 @@ pub enum WithdrawError {
     },
     FailedToWithdraw {
         fee_block: Option<Nat>,
-        rejection_code: RejectionCode,
+        rejection_code: Nat,
         rejection_reason: String,
     },
     GenericError {

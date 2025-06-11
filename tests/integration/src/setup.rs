@@ -6,7 +6,7 @@ use ic_ledger_types::{
     AccountIdentifier, Tokens, DEFAULT_SUBACCOUNT, MAINNET_CYCLES_MINTING_CANISTER_ID,
     MAINNET_LEDGER_CANISTER_ID,
 };
-use pocket_ic::{PocketIc, PocketIcBuilder};
+use pocket_ic::{PocketIc, PocketIcBuilder, Time};
 use serde::Serialize;
 use simple_funding::FundingConfig;
 use std::collections::{HashMap, HashSet};
@@ -72,7 +72,9 @@ pub fn setup_new_env() -> TestEnv {
     // live mode would set the time back to the current time.
     // Therefore, if we want to use live mode, we need to start the tests with the time
     // set to the past.
-    env.set_time(SystemTime::now() - Duration::from_secs(24 * 60 * 60));
+    env.set_time(Time::from(
+        SystemTime::now() - Duration::from_secs(24 * 60 * 60),
+    ));
     let controller = controller_test_id();
     let minter = minter_test_id();
     let canister_ids = install_canisters(&env, controller, minter);

@@ -1,7 +1,7 @@
 use std::{collections::HashMap, fmt::Debug, rc::Rc, sync::Arc};
 
 use candid::Principal;
-use ic_cdk::api::management_canister::main::CanisterId;
+use ic_cdk::management_canister::CanisterId;
 use ic_ledger_types::AccountIdentifier;
 
 use crate::operations::obtain::ObtainCycles;
