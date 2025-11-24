@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::{
     env,
     fs::{self, File},
-    io::{self, ErrorKind, Write},
+    io::{self, Write},
     path::Path,
     process::{Command, Stdio},
 };
@@ -166,10 +166,10 @@ fn download(url: &str, destination: &Path) -> io::Result<()> {
         dest.write_all(&content)?;
         Ok(())
     } else {
-        Err(io::Error::new(
-            ErrorKind::Other,
-            format!("Failed to download file: {}", url),
-        ))
+        Err(io::Error::other(format!(
+            "Failed to download file: {}",
+            url
+        )))
     }
 }
 

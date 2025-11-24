@@ -189,9 +189,8 @@ impl FundManager {
         }
 
         // Schedule the timer to run the monitoring at the specified interval.
-        let manager_for_interval = Rc::clone(&manager);
         ic_cdk_timers::set_timer_interval(interval, move || {
-            let manager = Rc::clone(&manager_for_interval);
+            let manager = Rc::clone(&manager);
             async move {
                 Self::execute_scheduled_monitoring(manager).await;
             }
