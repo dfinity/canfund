@@ -12,7 +12,6 @@ use ic_cdk::api::{canister_self, debug_print};
 use ic_cdk::management_canister::DepositCyclesArgs;
 use ic_cdk::{
     api::time,
-    futures::spawn,
     management_canister::{deposit_cycles, CanisterId},
 };
 use ic_cdk_timers::TimerId;
@@ -184,19 +183,18 @@ impl FundManager {
 
         if start_immediately {
             let manager = Rc::clone(&manager);
-            ic_cdk_timers::set_timer(Duration::from_secs(0), move || {
-                spawn(async move {
-                    Self::execute_scheduled_monitoring(manager).await;
-                });
+            ic_cdk_timers::set_timer(Duration::from_secs(0), async move {
+                Self::execute_scheduled_monitoring(manager).await;
             });
         }
 
         // Schedule the timer to run the monitoring at the specified interval.
+        let manager_for_interval = Rc::clone(&manager);
         ic_cdk_timers::set_timer_interval(interval, move || {
-            let manager = Rc::clone(&manager);
-            spawn(async move {
+            let manager = Rc::clone(&manager_for_interval);
+            async move {
                 Self::execute_scheduled_monitoring(manager).await;
-            });
+            }
         })
     }
 
