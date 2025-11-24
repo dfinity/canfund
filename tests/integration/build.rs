@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::{
     env,
     fs::{self, File},
-    io::{self, ErrorKind, Write},
+    io::{self, Write},
     path::Path,
     process::{Command, Stdio},
 };
@@ -166,10 +166,10 @@ fn download(url: &str, destination: &Path) -> io::Result<()> {
         dest.write_all(&content)?;
         Ok(())
     } else {
-        Err(io::Error::new(
-            ErrorKind::Other,
-            format!("Failed to download file: {}", url),
-        ))
+        Err(io::Error::other(format!(
+            "Failed to download file: {}",
+            url
+        )))
     }
 }
 
@@ -181,9 +181,9 @@ pub fn download_ic_wasm() {
 
     let ic_wasm_url =
         match OS_TYPE.as_str() {
-            "darwin" => "https://github.com/dfinity/ic-wasm/releases/download/0.6.0/ic-wasm-macos"
+            "darwin" => "https://github.com/dfinity/ic-wasm/releases/download/0.9.9/ic-wasm-macos"
                 .to_string(),
-            "linux" => "https://github.com/dfinity/ic-wasm/releases/download/0.6.0/ic-wasm-linux64"
+            "linux" => "https://github.com/dfinity/ic-wasm/releases/download/0.9.9/ic-wasm-linux64"
                 .to_string(),
             _ => {
                 eprintln!("Unsupported OS: {}", OS_TYPE.as_str());
@@ -204,7 +204,7 @@ pub fn download_pocket_ic() {
     }
 
     let pocket_ic_url = format!(
-        "https://github.com/dfinity/pocketic/releases/download/7.0.0/pocket-ic-x86_64-{}.gz",
+        "https://github.com/dfinity/pocketic/releases/download/10.0.0/pocket-ic-x86_64-{}.gz",
         OS_TYPE.as_str()
     );
     let output_path = OUT_DIR.join(format!("pocket-ic-x86_64-{}.gz", OS_TYPE.as_str()));
@@ -239,7 +239,7 @@ pub fn download_icp_ledger_wasm() {
         return;
     }
 
-    let icp_ledger_wasm_url = "https://download.dfinity.systems/ic/3d6a76efba59d6f03026d6b7c1c9a1dfce96ee93/canisters/ledger-canister.wasm.gz";
+    let icp_ledger_wasm_url = "https://download.dfinity.systems/ic/948d5b9260494ec3e6c9bc9db499f34d52ba6c7f/canisters/ledger-canister.wasm.gz";
 
     download(
         icp_ledger_wasm_url,
@@ -254,7 +254,7 @@ pub fn download_cmc_wasm() {
         return;
     }
 
-    let cmc_wasm_url = "https://download.dfinity.systems/ic/3d6a76efba59d6f03026d6b7c1c9a1dfce96ee93/canisters/cycles-minting-canister.wasm.gz";
+    let cmc_wasm_url = "https://download.dfinity.systems/ic/948d5b9260494ec3e6c9bc9db499f34d52ba6c7f/canisters/cycles-minting-canister.wasm.gz";
 
     download(cmc_wasm_url, &WASM_OUT_DIR.join("cmc.wasm.gz"))
         .expect("Failed to download cmc.wasm.gz");
@@ -266,7 +266,7 @@ pub fn download_cycles_ledger_wasm() {
         return;
     }
 
-    let cycles_ledger_wasm = "https://github.com/dfinity/cycles-ledger/releases/download/cycles-ledger-v1.0.3/cycles-ledger.wasm.gz";
+    let cycles_ledger_wasm = "https://github.com/dfinity/cycles-ledger/releases/download/cycles-ledger-v1.0.6/cycles-ledger.wasm.gz";
 
     download(
         cycles_ledger_wasm,

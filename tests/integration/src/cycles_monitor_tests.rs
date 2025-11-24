@@ -8,7 +8,7 @@ use crate::setup::{
 };
 use crate::utils::{advance_time_to_burn_cycles, controller_test_id};
 use crate::TestEnv;
-use candid::{CandidType, Deserialize, Encode};
+use candid::{CandidType, Encode};
 use ic_ledger_types::{AccountIdentifier, DEFAULT_SUBACCOUNT};
 use icrc_ledger_types::icrc1::account::Account;
 use icrc_ledger_types::icrc1::transfer::Memo;
@@ -218,12 +218,6 @@ fn can_obtain_from_cycles_ledger_to_top_up_self() {
         pub to: Account,
         pub memo: Option<Memo>,
         pub cycles: u128,
-    }
-
-    #[derive(CandidType, Deserialize, Clone, Debug, PartialEq, Eq)]
-    pub struct DepositResult {
-        pub block_index: u64,
-        pub balance: u64,
     }
 
     let arg = DepositArg {
